@@ -1,22 +1,36 @@
 {
   "expo": {
-    "name": "CyberNurse",
+    "name": "Cyber Nurse",
     "slug": "CyberNurse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cybernurse",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cybernurse.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#E53935",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.cybernurse.app",
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "POST_NOTIFICATIONS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -31,12 +45,36 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#E53935"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cyber Nurse precisa da câmera para verificar que você tomou sua medicação."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#E53935",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Cyber Nurse precisa acessar seu calendário para sincronizar lembretes de medicamentos."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "appName": "Cyber Nurse",
+      "appVersion": "1.0.0"
     }
   }
 }
