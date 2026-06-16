@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import { getAllMedications } from '../../src/services/medicationService';
+import { getDatabase } from '../../src/services/database';
 
 // ── Types ──────────────────────────────────────────────
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -87,6 +90,28 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
 // ── Component ──────────────────────────────────────────
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const [activeMedsCount, setActiveMedsCount] = useState(0);
+  const [adherenceRate, setAdherenceRate] = useState(87);
+
+  useFocusEffect(
+    useCallback(() => {
+      try {
+        const meds = getAllMedications();
+        setActiveMedsCount(meds.length);
+
+        const db = getDatabase();
+        const allDoses = db.getAllSync<{ status: string }>('SELECT status FROM doses');
+        if (allDoses.length > 0) {
+          const taken = allDoses.filter(d => d.status === 'taken').length;
+          setAdherenceRate(Math.round((taken / allDoses.length) * 100));
+        } else {
+          setAdherenceRate(100);
+        }
+      } catch (e) {
+        console.error('Failed to load stats for profile:', e);
+      }
+    }, [])
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -125,12 +150,12 @@ export default function ProfileScreen() {
           {/* Quick stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>6</Text>
+              <Text style={styles.statValue}>{activeMedsCount}</Text>
               <Text style={styles.statLabel}>Medicamentos</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>87%</Text>
+              <Text style={styles.statValue}>{adherenceRate}%</Text>
               <Text style={styles.statLabel}>Adesão</Text>
             </View>
             <View style={styles.statDivider} />

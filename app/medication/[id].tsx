@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,17 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { 
+  getMedicationById, 
+  getSchedulesByMedicationId, 
+  getStockByMedicationId, 
+  deleteMedication, 
+  archiveMedication 
+} from '../../src/services/medicationService';
+import { useMedicationStore } from '../../src/stores';
+import { MEDICATION_FORM_ICONS, MEDICATION_FORM_LABELS, MedicationForm } from '../../src/models/Medication';
+import { FREQUENCY_TYPE_LABELS, MEAL_RELATION_LABELS, FrequencyType, MealRelation } from '../../src/models/Schedule';
+import { formatShortDate } from '../../src/utils/dateUtils';
 
 const C = {
   primary: '#E53935',
@@ -29,28 +40,6 @@ const C = {
   white: '#FFFFFF',
 };
 
-// Mock medication data
-const MOCK_MEDICATION = {
-  id: '1',
-  name: 'Metformina',
-  dosage: '850mg',
-  form: 'Comprimido',
-  color: '#3B4CCA',
-  instructions: 'Tomar após o almoço',
-  iconName: 'pill',
-  schedule: {
-    frequency: 'Diariamente',
-    times: ['08:00', '12:00', '20:00'],
-    mealRelation: 'Após refeição',
-  },
-  stock: {
-    current: 23,
-    min: 5,
-    expiry: '15/12/2026',
-  },
-  adherence: 87,
-};
-
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={styles.infoRow}>
@@ -64,22 +53,97 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 export default function MedicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const med = MOCK_MEDICATION;
+
+  const [medication, setMedication] = useState<any>(null);
+  const [schedule, setSchedule] = useState<any>(null);
+  const [stock, setStock] = useState<any>(null);
+  const [adherence, setAdherence] = useState<number>(100);
+
+  const loadData = useCallback(() => {
+    if (!id) return;
+    try {
+      const dbMed = getMedicationById(id);
+      if (dbMed) {
+        setMedication(dbMed);
+        
+        const dbScheds = getSchedulesByMedicationId(id);
+        setSchedule(dbScheds[0] || null);
+        
+        const dbStock = getStockByMedicationId(id);
+        setStock(dbStock);
+
+        const db = require('../../src/services/database').getDatabase();
+        const medDoses = db.getAllSync('SELECT status FROM doses WHERE medicationId = ?', [id]);
+        if (medDoses.length > 0) {
+          const takenCount = medDoses.filter((d: any) => d.status === 'taken').length;
+          setAdherence(Math.round((takenCount / medDoses.length) * 100));
+        } else {
+          setAdherence(100);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load medication details:', e);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDelete = () => {
+    if (!medication) return;
     Alert.alert(
       'Excluir Medicamento',
-      `Deseja realmente excluir ${med.name}? Esta ação não pode ser desfeita.`,
+      `Deseja realmente excluir ${medication.name}? Esta ação não pode ser desfeita.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir',
           style: 'destructive',
-          onPress: () => router.back(),
+          onPress: () => {
+            try {
+              deleteMedication(medication.id);
+              useMedicationStore.getState().removeMedication(medication.id);
+              router.back();
+            } catch (e) {
+              console.error('Failed to delete medication:', e);
+              Alert.alert('Erro', 'Não foi possível excluir o medicamento.');
+            }
+          },
         },
       ]
     );
   };
+
+  const handleArchive = () => {
+    if (!medication) return;
+    try {
+      archiveMedication(medication.id);
+      useMedicationStore.getState().updateMedication(medication.id, { isActive: false });
+      Alert.alert(
+        'Medicamento Arquivado',
+        `${medication.name} foi arquivado com sucesso.`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (e) {
+      console.error('Failed to archive medication:', e);
+      Alert.alert('Erro', 'Não foi possível arquivar o medicamento.');
+    }
+  };
+
+  if (!medication) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: C.textSecondary }}>Carregando...</Text>
+      </View>
+    );
+  }
+
+  const iconName = MEDICATION_FORM_ICONS[medication.form as MedicationForm] || 'medical-bag';
+  const formLabel = MEDICATION_FORM_LABELS[medication.form as MedicationForm] || 'Outro';
+  const currentStock = stock ? stock.currentQuantity : 0;
+  const minStock = stock ? stock.minThreshold : 5;
+  const expiryLabel = stock && stock.expiryDate ? formatShortDate(stock.expiryDate) : 'Sem validade';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -107,25 +171,25 @@ export default function MedicationDetailScreen() {
           <View
             style={[
               styles.heroIcon,
-              { backgroundColor: `${med.color}20` },
+              { backgroundColor: `${medication.color}20` },
             ]}
           >
             <MaterialCommunityIcons
-              name={med.iconName as any}
+              name={iconName as any}
               size={48}
-              color={med.color}
+              color={medication.color}
             />
           </View>
-          <Text style={styles.heroName}>{med.name}</Text>
-          <Text style={styles.heroDosage}>{med.dosage} • {med.form}</Text>
-          {med.instructions && (
+          <Text style={styles.heroName}>{medication.name}</Text>
+          <Text style={styles.heroDosage}>{medication.dosage} • {formLabel}</Text>
+          {medication.instructions && (
             <View style={styles.instructionBadge}>
               <MaterialCommunityIcons
                 name="information-outline"
                 size={14}
                 color={C.accent}
               />
-              <Text style={styles.instructionText}>{med.instructions}</Text>
+              <Text style={styles.instructionText}>{medication.instructions}</Text>
             </View>
           )}
         </View>
@@ -135,7 +199,7 @@ export default function MedicationDetailScreen() {
           <Text style={styles.cardTitle}>Adesão ao Tratamento</Text>
           <View style={styles.adherenceRow}>
             <View style={styles.adherenceCircle}>
-              <Text style={styles.adherencePercent}>{med.adherence}%</Text>
+              <Text style={styles.adherencePercent}>{adherence}%</Text>
             </View>
             <View style={styles.adherenceInfo}>
               <Text style={styles.adherenceLabel}>Taxa de adesão dos últimos 30 dias</Text>
@@ -143,7 +207,7 @@ export default function MedicationDetailScreen() {
                 <View
                   style={[
                     styles.adherenceBarFill,
-                    { width: `${med.adherence}%` },
+                    { width: `${adherence}%` },
                   ]}
                 />
               </View>
@@ -154,17 +218,29 @@ export default function MedicationDetailScreen() {
         {/* Schedule */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Agendamento</Text>
-          <InfoRow icon="calendar-repeat" label="Frequência" value={med.schedule.frequency} />
-          <InfoRow icon="silverware-fork-knife" label="Refeição" value={med.schedule.mealRelation} />
+          <InfoRow 
+            icon="calendar-repeat" 
+            label="Frequência" 
+            value={schedule ? FREQUENCY_TYPE_LABELS[schedule.frequencyType as FrequencyType] : 'Diariamente'} 
+          />
+          <InfoRow 
+            icon="silverware-fork-knife" 
+            label="Refeição" 
+            value={schedule ? MEAL_RELATION_LABELS[schedule.mealRelation as MealRelation] : 'Sem relação'} 
+          />
           <View style={styles.timesRow}>
             <MaterialCommunityIcons name="clock-outline" size={20} color={C.textSecondary} />
             <Text style={styles.infoLabel}>Horários</Text>
             <View style={styles.timeBadges}>
-              {med.schedule.times.map((time, i) => (
+              {schedule && schedule.times ? schedule.times.map((time: string, i: number) => (
                 <View key={i} style={styles.timeBadge}>
                   <Text style={styles.timeBadgeText}>{time}</Text>
                 </View>
-              ))}
+              )) : (
+                <View style={styles.timeBadge}>
+                  <Text style={styles.timeBadgeText}>—</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -172,16 +248,16 @@ export default function MedicationDetailScreen() {
         {/* Stock */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Estoque</Text>
-          <InfoRow icon="package-variant" label="Quantidade" value={`${med.stock.current} unidades`} />
-          <InfoRow icon="alert-circle-outline" label="Alerta em" value={`${med.stock.min} unidades`} />
-          <InfoRow icon="calendar-end" label="Validade" value={med.stock.expiry} />
+          <InfoRow icon="package-variant" label="Quantidade" value={`${currentStock} unidades`} />
+          <InfoRow icon="alert-circle-outline" label="Alerta em" value={`${minStock} unidades`} />
+          <InfoRow icon="calendar-end" label="Validade" value={expiryLabel} />
           <View style={styles.stockBar}>
             <View
               style={[
                 styles.stockBarFill,
                 {
-                  width: `${Math.min((med.stock.current / 60) * 100, 100)}%`,
-                  backgroundColor: med.stock.current <= med.stock.min ? C.warning : C.success,
+                  width: `${Math.min((currentStock / 60) * 100, 100)}%`,
+                  backgroundColor: currentStock <= minStock ? C.warning : C.success,
                 },
               ]}
             />
@@ -190,7 +266,7 @@ export default function MedicationDetailScreen() {
 
         {/* Actions */}
         <View style={styles.actionsCard}>
-          <TouchableOpacity style={styles.actionRow} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionRow} onPress={handleArchive}>
             <MaterialCommunityIcons name="archive-outline" size={22} color={C.textSecondary} />
             <Text style={styles.actionText}>Arquivar medicamento</Text>
             <MaterialCommunityIcons name="chevron-right" size={22} color={C.textSecondary} />

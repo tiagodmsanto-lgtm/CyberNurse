@@ -46,10 +46,10 @@ export const MEDICATION_FORM_LABELS: Record<MedicationForm, string> = {
  */
 export const MEDICATION_FORM_ICONS: Record<MedicationForm, string> = {
   comprimido: 'pill',
-  capsula: 'capsules',
+  capsula: 'pill',
   liquido: 'bottle-tonic',
   injecao: 'needle',
-  pomada: 'tube',
+  pomada: 'medical-bag',
   gotas: 'eyedropper',
   outro: 'medical-bag',
 };

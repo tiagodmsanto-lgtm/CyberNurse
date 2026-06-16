@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import 'react-native-reanimated';
 import { PaperProvider } from 'react-native-paper';
@@ -25,14 +25,18 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [dbReady, setDbReady] = useState(false);
 
   // Initialize database on app start
   useEffect(() => {
     try {
       initDatabase();
       console.log('Database initialized successfully');
+      setDbReady(true);
     } catch (e) {
       console.error('Failed to initialize database:', e);
+      // Even if it fails, set to true so the app can render and handle errors gracefully
+      setDbReady(true);
     }
   }, []);
 
@@ -42,12 +46,12 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && dbReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, dbReady]);
 
-  if (!loaded) {
+  if (!loaded || !dbReady) {
     return null;
   }
 
@@ -91,13 +95,6 @@ function RootLayoutNav() {
             headerShown: false,
             presentation: 'fullScreenModal',
             animation: 'fade',
-          }}
-        />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
           }}
         />
       </Stack>

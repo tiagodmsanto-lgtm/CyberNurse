@@ -32,10 +32,10 @@ export const ALARM_ESCALATION = {
 /** Medication form types with their display info */
 export const MEDICATION_FORMS = [
   { key: 'comprimido', label: 'Comprimido', icon: 'pill' },
-  { key: 'capsula', label: 'Cápsula', icon: 'capsules' },
+  { key: 'capsula', label: 'Cápsula', icon: 'pill' },
   { key: 'liquido', label: 'Líquido', icon: 'bottle-tonic' },
   { key: 'injecao', label: 'Injeção', icon: 'needle' },
-  { key: 'pomada', label: 'Pomada', icon: 'tube' },
+  { key: 'pomada', label: 'Pomada', icon: 'medical-bag' },
   { key: 'gotas', label: 'Gotas', icon: 'eyedropper' },
   { key: 'outro', label: 'Outro', icon: 'medical-bag' },
 ] as const;

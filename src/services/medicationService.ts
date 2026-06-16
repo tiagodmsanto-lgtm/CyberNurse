@@ -4,6 +4,9 @@
 
 import type { SQLiteBindValue } from 'expo-sqlite';
 import type { Medication } from '../models/Medication';
+import type { Schedule } from '../models/Schedule';
+import type { Dose } from '../models/Dose';
+import type { Stock } from '../models/Stock';
 import { getDatabase, generateId } from './database';
 
 // ─── Row ↔ Model mapping ──────────────────────
@@ -150,4 +153,206 @@ export function deleteMedication(id: string): void {
  */
 export function archiveMedication(id: string): void {
   updateMedication(id, { isActive: false });
+}
+
+// ─── SCHEDULES, DOSES & STOCK SERVICES ───────────
+
+export interface ScheduleRow {
+  id: string;
+  medicationId: string;
+  frequencyType: string;
+  frequencyValue: string;
+  times: string;
+  startDate: number;
+  endDate: number | null;
+  mealRelation: string;
+}
+
+export function getSchedulesByMedicationId(medicationId: string): Schedule[] {
+  const db = getDatabase();
+  const rows = db.getAllSync<ScheduleRow>(
+    'SELECT * FROM schedules WHERE medicationId = ?',
+    [medicationId]
+  );
+  return rows.map(row => ({
+    ...row,
+    frequencyType: row.frequencyType as Schedule['frequencyType'],
+    times: JSON.parse(row.times),
+    mealRelation: row.mealRelation as Schedule['mealRelation'],
+  }));
+}
+
+export function getStockByMedicationId(medicationId: string): Stock | null {
+  const db = getDatabase();
+  const row = db.getFirstSync<Stock>(
+    'SELECT * FROM stock WHERE medicationId = ?',
+    [medicationId]
+  );
+  return row || null;
+}
+
+export function getAllStock(): Stock[] {
+  const db = getDatabase();
+  const rows = db.getAllSync<Stock>('SELECT * FROM stock');
+  return rows;
+}
+
+export interface DoseWithMedication extends Dose {
+  medicationName: string;
+  dosage: string;
+  color: string;
+  form: string;
+}
+
+export function getDosesByDateRange(start: number, end: number): DoseWithMedication[] {
+  const db = getDatabase();
+  const rows = db.getAllSync<any>(
+    `SELECT d.*, m.name as medicationName, m.dosage as dosage, m.color as color, m.form as form
+     FROM doses d
+     JOIN medications m ON d.medicationId = m.id
+     WHERE d.scheduledAt >= ? AND d.scheduledAt <= ?
+     ORDER BY d.scheduledAt ASC`,
+    [start, end]
+  );
+  return rows;
+}
+
+export function getDoseWithMedicationById(doseId: string): DoseWithMedication | null {
+  const db = getDatabase();
+  const row = db.getFirstSync<any>(
+    `SELECT d.*, m.name as medicationName, m.dosage as dosage, m.color as color, m.form as form
+     FROM doses d
+     JOIN medications m ON d.medicationId = m.id
+     WHERE d.id = ?`,
+    [doseId]
+  );
+  return row || null;
+}
+
+export function generateDosesForDay(date: Date): void {
+  const db = getDatabase();
+  const medications = getAllMedications();
+  
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+  
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  for (const med of medications) {
+    const schedulesRows = db.getAllSync<ScheduleRow>(
+      'SELECT * FROM schedules WHERE medicationId = ?',
+      [med.id]
+    );
+    
+    for (const sched of schedulesRows) {
+      if (sched.startDate > endOfDay.getTime()) continue;
+      if (sched.endDate && sched.endDate < startOfDay.getTime()) continue;
+      
+      let shouldGenerate = false;
+      if (sched.frequencyType === 'daily') {
+        shouldGenerate = true;
+      } else if (sched.frequencyType === 'specific_days') {
+        try {
+          const val = JSON.parse(sched.frequencyValue);
+          if (Array.isArray(val.days) && val.days.includes(dayOfWeek)) {
+            shouldGenerate = true;
+          }
+        } catch (e) {
+          console.error('Failed to parse frequencyValue for schedule', sched.id, e);
+        }
+      } else if (sched.frequencyType === 'interval') {
+        shouldGenerate = true; 
+      }
+      
+      if (!shouldGenerate) continue;
+      
+      let timesList: string[] = [];
+      try {
+        timesList = JSON.parse(sched.times);
+      } catch (e) {
+        console.error('Failed to parse times for schedule', sched.id, e);
+        continue;
+      }
+      
+      for (const timeStr of timesList) {
+        const [hourStr, minStr] = timeStr.split(':');
+        const hour = parseInt(hourStr, 10);
+        const min = parseInt(minStr, 10);
+        
+        const scheduledTime = new Date(date);
+        scheduledTime.setHours(hour, min, 0, 0);
+        const scheduledAt = scheduledTime.getTime();
+        
+        const existing = db.getFirstSync<{ id: string }>(
+          'SELECT id FROM doses WHERE scheduleId = ? AND scheduledAt = ?',
+          [sched.id, scheduledAt]
+        );
+        
+        if (!existing) {
+          const doseId = generateId();
+          db.runSync(
+            `INSERT INTO doses 
+               (id, scheduleId, medicationId, scheduledAt, status, verificationPhoto, verificationScore, verificationMethod, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              doseId,
+              sched.id,
+              med.id,
+              scheduledAt,
+              'pending',
+              null,
+              null,
+              null,
+              null
+            ]
+          );
+        }
+      }
+    }
+  }
+}
+
+export function verifyDoseInDb(
+  doseId: string,
+  photoUri: string,
+  score: number,
+  method: 'ai' | 'manual' | 'fallback'
+): void {
+  const db = getDatabase();
+  const now = Date.now();
+  
+  const dose = db.getFirstSync<{ medicationId: string }>(
+    'SELECT medicationId FROM doses WHERE id = ?',
+    [doseId]
+  );
+  
+  if (!dose) return;
+  
+  db.runSync(
+    `UPDATE doses 
+     SET status = 'taken', takenAt = ?, verificationPhoto = ?, verificationScore = ?, verificationMethod = ?
+     WHERE id = ?`,
+    [now, photoUri, score, method, doseId]
+  );
+  
+  db.runSync(
+    `UPDATE stock 
+     SET currentQuantity = MAX(0, currentQuantity - 1) 
+     WHERE medicationId = ?`,
+    [dose.medicationId]
+  );
+}
+
+export function updateDoseStatusInDb(
+  doseId: string,
+  status: 'pending' | 'taken' | 'missed' | 'skipped' | 'refused',
+  takenAt?: number
+): void {
+  const db = getDatabase();
+  db.runSync(
+    'UPDATE doses SET status = ?, takenAt = ? WHERE id = ?',
+    [status, status === 'taken' ? (takenAt ?? Date.now()) : null, doseId]
+  );
 }

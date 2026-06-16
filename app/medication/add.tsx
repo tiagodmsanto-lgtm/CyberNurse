@@ -15,6 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { createMedication, generateDosesForDay } from '../../src/services/medicationService';
+import { getDatabase, generateId } from '../../src/services/database';
+import { useMedicationStore } from '../../src/stores';
 
 // ─── Inline Color Palette (Pokémon Center) ──────────────
 const C = {
@@ -68,10 +71,10 @@ interface FrequencyOption {
 // ─── Constants ──────────────────────────────────────────
 const FORM_OPTIONS: FormItem[] = [
   { key: 'comprimido', label: 'Comprimido', icon: 'pill' },
-  { key: 'capsula', label: 'Cápsula', icon: 'capsules' },
+  { key: 'capsula', label: 'Cápsula', icon: 'pill' },
   { key: 'liquido', label: 'Líquido', icon: 'bottle-tonic' },
   { key: 'injecao', label: 'Injeção', icon: 'needle' },
-  { key: 'pomada', label: 'Pomada', icon: 'tube' },
+  { key: 'pomada', label: 'Pomada', icon: 'medical-bag' },
   { key: 'gotas', label: 'Gotas', icon: 'eyedropper' },
   { key: 'outro', label: 'Outro', icon: 'medical-bag' },
 ];
@@ -137,7 +140,7 @@ export default function AddMedicationScreen() {
   const animateStep = useCallback((toStep: number) => {
     Animated.spring(stepAnim, {
       toValue: toStep,
-      useNativeDriver: true,
+      useNativeDriver: false,
       damping: 20,
       stiffness: 200,
     }).start();
@@ -213,12 +216,114 @@ export default function AddMedicationScreen() {
 
   // ─── Save handler ─────────────────────────────────────
   const handleSave = useCallback(() => {
-    Alert.alert(
-      'Medicamento Salvo! 💊',
-      `${name} (${dosage}) foi adicionado com sucesso.`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
-  }, [name, dosage]);
+    if (!selectedForm) return;
+
+    try {
+      // 1. Create medication in DB
+      const newMed = createMedication({
+        name: name.trim(),
+        dosage: dosage.trim(),
+        form: selectedForm as any,
+        color: selectedColor,
+        photoUri: null,
+        instructions: instructions.trim() || null,
+        isActive: true,
+      });
+
+      // 2. Create schedule in DB
+      const freqValue =
+        frequencyType === 'daily'
+          ? '{}'
+          : frequencyType === 'specific_days'
+          ? JSON.stringify({ days: selectedDays })
+          : JSON.stringify({ hours: parseInt(intervalHours, 10) });
+
+      const db = getDatabase();
+      const scheduleId = generateId();
+      db.runSync(
+        `INSERT INTO schedules 
+           (id, medicationId, frequencyType, frequencyValue, times, startDate, endDate, mealRelation)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          scheduleId,
+          newMed.id,
+          frequencyType,
+          freqValue,
+          JSON.stringify(times),
+          Date.now(),
+          null,
+          'none',
+        ]
+      );
+
+      // 3. Create stock in DB
+      const qty = parseFloat(initialQuantity);
+      const threshold = parseFloat(minThreshold) || 5;
+      
+      let parsedExpiry: number | null = null;
+      if (expiryDate.trim()) {
+        const [dayStr, monthStr, yearStr] = expiryDate.split('/');
+        if (dayStr && monthStr && yearStr) {
+          const date = new Date(
+            parseInt(yearStr, 10),
+            parseInt(monthStr, 10) - 1,
+            parseInt(dayStr, 10)
+          );
+          parsedExpiry = date.getTime();
+        }
+      }
+
+      const stockId = generateId();
+      db.runSync(
+        `INSERT INTO stock 
+           (id, medicationId, currentQuantity, minThreshold, expiryDate, lastRefillDate)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          stockId,
+          newMed.id,
+          isNaN(qty) ? 0 : qty,
+          threshold,
+          parsedExpiry,
+          Date.now(),
+        ]
+      );
+
+      // 4. Generate doses for today
+      generateDosesForDay(new Date());
+
+      // 5. Update medication store
+      useMedicationStore.getState().addMedication(newMed);
+
+      if (Platform.OS === 'web') {
+        window.alert(`Medicamento Salvo!\n${name} (${dosage}) foi adicionado com sucesso.`);
+      } else {
+        Alert.alert(
+          'Medicamento Salvo! 💊',
+          `${name} (${dosage}) foi adicionado com sucesso.`,
+          [{ text: 'OK' }]
+        );
+      }
+      
+      // Automatically redirect to the home page (index)
+      router.replace('/');
+    } catch (error) {
+      console.error('Failed to save medication:', error);
+      Alert.alert('Erro', 'Não foi possível salvar o medicamento.');
+    }
+  }, [
+    name,
+    dosage,
+    selectedForm,
+    selectedColor,
+    instructions,
+    frequencyType,
+    selectedDays,
+    intervalHours,
+    times,
+    initialQuantity,
+    minThreshold,
+    expiryDate,
+  ]);
 
   // ─── Get the form label ───────────────────────────────
   const getFormLabel = (key: MedicationFormType): string =>

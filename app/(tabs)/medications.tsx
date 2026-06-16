@@ -14,11 +14,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Spacing, BorderRadius } from '../../src/theme/spacing';
 import { MedicationCard } from '../../src/components/medication/MedicationCard';
 import type { Medication, MedicationForm } from '../../src/models/Medication';
+import { useMedicationStore, useStockStore } from '../../src/stores';
+import { getAllMedications, getAllStock } from '../../src/services/medicationService';
 
 // ─── Filter types ───────────────────────────────────────
 type FilterType = 'all' | 'active' | 'archived';
@@ -35,86 +37,32 @@ const FILTERS: FilterChip[] = [
   { key: 'archived', label: 'Arquivados', icon: 'archive-outline' },
 ];
 
-// ─── Mock data ──────────────────────────────────────────
-const MOCK_MEDICATIONS: Medication[] = [
-  {
-    id: '1',
-    name: 'Losartana',
-    dosage: '50mg',
-    form: 'comprimido' as MedicationForm,
-    color: '#E53935',
-    photoUri: null,
-    instructions: 'Tomar em jejum',
-    createdAt: Date.now() - 86400000 * 30,
-    updatedAt: Date.now(),
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Metformina',
-    dosage: '850mg',
-    form: 'comprimido' as MedicationForm,
-    color: '#3B4CCA',
-    photoUri: null,
-    instructions: 'Tomar após almoço e jantar',
-    createdAt: Date.now() - 86400000 * 60,
-    updatedAt: Date.now(),
-    isActive: true,
-  },
-  {
-    id: '3',
-    name: 'Omeprazol',
-    dosage: '20mg',
-    form: 'capsula' as MedicationForm,
-    color: '#43A047',
-    photoUri: null,
-    instructions: 'Tomar 30 min antes do café',
-    createdAt: Date.now() - 86400000 * 90,
-    updatedAt: Date.now(),
-    isActive: true,
-  },
-  {
-    id: '4',
-    name: 'Vitamina D',
-    dosage: '2000 UI',
-    form: 'gotas' as MedicationForm,
-    color: '#FB8C00',
-    photoUri: null,
-    instructions: null,
-    createdAt: Date.now() - 86400000 * 15,
-    updatedAt: Date.now(),
-    isActive: true,
-  },
-  {
-    id: '5',
-    name: 'Amoxicilina',
-    dosage: '500mg',
-    form: 'capsula' as MedicationForm,
-    color: '#7E57C2',
-    photoUri: null,
-    instructions: 'Tratamento encerrado',
-    createdAt: Date.now() - 86400000 * 120,
-    updatedAt: Date.now() - 86400000 * 100,
-    isActive: false,
-  },
-];
-
-// Mock stock data keyed by medication ID
-const MOCK_STOCK: Record<string, { quantity: number; threshold: number }> = {
-  '1': { quantity: 22, threshold: 5 },
-  '2': { quantity: 3, threshold: 5 },
-  '3': { quantity: 14, threshold: 5 },
-  '4': { quantity: 45, threshold: 10 },
-  '5': { quantity: 0, threshold: 5 },
-};
-
 // ─── Component ──────────────────────────────────────────
 export default function MedicationsScreen() {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [medications] = useState(MOCK_MEDICATIONS);
+
+  const medications = useMedicationStore((state) => state.medications);
+  const stocks = useStockStore((state) => state.stocks);
+
+  const fetchMedications = useCallback(() => {
+    try {
+      const meds = getAllMedications();
+      const st = getAllStock();
+      useMedicationStore.getState().setMedications(meds);
+      useStockStore.getState().setStocks(st);
+    } catch (error) {
+      console.error('Failed to fetch medications and stock:', error);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMedications();
+    }, [fetchMedications])
+  );
 
   // Animation values
   const fabScale = useRef(new Animated.Value(1)).current;
@@ -124,21 +72,22 @@ export default function MedicationsScreen() {
     Animated.timing(headerOpacity, {
       toValue: 1,
       duration: 500,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, []);
 
   // Pull-to-refresh handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    fetchMedications();
     setTimeout(() => setRefreshing(false), 800);
-  }, []);
+  }, [fetchMedications]);
 
   // FAB press animation
   const onFabPressIn = useCallback(() => {
     Animated.spring(fabScale, {
       toValue: 0.9,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, []);
 
@@ -146,7 +95,7 @@ export default function MedicationsScreen() {
     Animated.spring(fabScale, {
       toValue: 1,
       friction: 3,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, []);
 
@@ -196,18 +145,18 @@ export default function MedicationsScreen() {
   // Render individual medication card
   const renderMedication = useCallback(
     ({ item }: ListRenderItemInfo<Medication>) => {
-      const stock = MOCK_STOCK[item.id];
+      const stock = stocks.find((s) => s.medicationId === item.id);
       return (
         <MedicationCard
           medication={item}
           onPress={() => router.push(`/medication/${item.id}`)}
-          onEdit={() => {}}
-          stockQuantity={stock?.quantity}
-          stockThreshold={stock?.threshold}
+          onEdit={() => router.push(`/medication/${item.id}`)}
+          stockQuantity={stock?.currentQuantity}
+          stockThreshold={stock?.minThreshold}
         />
       );
     },
-    []
+    [stocks]
   );
 
   const keyExtractor = useCallback((item: Medication) => item.id, []);

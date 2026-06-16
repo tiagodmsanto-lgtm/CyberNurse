@@ -13,65 +13,11 @@ import { Colors } from '../../src/theme/colors';
 import { Spacing, BorderRadius } from '../../src/theme/spacing';
 import { DoseCard } from '../../src/components/medication/DoseCard';
 import type { DoseStatus } from '../../src/models/Dose';
-import { router } from 'expo-router';
-
-// Mock data for demonstration
-const MOCK_DOSES = [
-  {
-    id: '1',
-    medicationName: 'Losartana',
-    dosage: '50mg',
-    time: '08:00',
-    status: 'taken' as DoseStatus,
-    iconName: 'pill',
-    color: '#E53935',
-  },
-  {
-    id: '2',
-    medicationName: 'Metformina',
-    dosage: '850mg',
-    time: '12:00',
-    status: 'pending' as DoseStatus,
-    iconName: 'pill',
-    color: '#3B4CCA',
-  },
-  {
-    id: '3',
-    medicationName: 'Omeprazol',
-    dosage: '20mg',
-    time: '07:00',
-    status: 'taken' as DoseStatus,
-    iconName: 'capsules',
-    color: '#43A047',
-  },
-  {
-    id: '4',
-    medicationName: 'Vitamina D',
-    dosage: '2000UI',
-    time: '14:00',
-    status: 'pending' as DoseStatus,
-    iconName: 'bottle-tonic',
-    color: '#FB8C00',
-  },
-  {
-    id: '5',
-    medicationName: 'Insulina',
-    dosage: '10UI',
-    time: '18:00',
-    status: 'pending' as DoseStatus,
-    iconName: 'needle',
-    color: '#F48FB1',
-  },
-  {
-    id: '6',
-    medicationName: 'Rivotril',
-    dosage: '0.5mg',
-    time: '22:00',
-    status: 'pending' as DoseStatus,
-    iconName: 'pill',
-    color: '#7E57C2',
-  },
-];
+import { router, useFocusEffect } from 'expo-router';
+import { useDoseStore } from '../../src/stores';
+import { generateDosesForDay, getDosesByDateRange, DoseWithMedication } from '../../src/services/medicationService';
+import { getDayBounds } from '../../src/utils/dateUtils';
+import { MEDICATION_FORM_ICONS, MedicationForm } from '../../src/models/Medication';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -90,15 +36,47 @@ function formatDate(): string {
   return now.toLocaleDateString('pt-BR', options);
 }
 
+const formatDoseTime = (scheduledAt: number) => {
+  const date = new Date(scheduledAt);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  const [doses] = useState(MOCK_DOSES);
+  const doses = useDoseStore((state) => state.todayDoses) as DoseWithMedication[];
+
+  const fetchDoses = useCallback(() => {
+    try {
+      // 1. Generate doses for today
+      generateDosesForDay(new Date());
+      
+      // 2. Fetch bounds
+      const bounds = getDayBounds(new Date());
+      
+      // 3. Query actual doses
+      const dbDoses = getDosesByDateRange(bounds.start, bounds.end);
+      
+      // 4. Set in store
+      useDoseStore.getState().setTodayDoses(dbDoses);
+    } catch (e) {
+      console.error('Failed to fetch today doses:', e);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchDoses();
+    }, [fetchDoses])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    fetchDoses();
+    setTimeout(() => setRefreshing(false), 800);
+  }, [fetchDoses]);
 
   const takenCount = doses.filter(d => d.status === 'taken').length;
   const totalCount = doses.length;
@@ -177,13 +155,16 @@ export default function TodayScreen() {
             <DoseCard
               medicationName={nextDose.medicationName}
               dosage={nextDose.dosage}
-              time={nextDose.time}
+              time={formatDoseTime(nextDose.scheduledAt)}
               status={nextDose.status}
-              iconName={nextDose.iconName}
+              iconName={MEDICATION_FORM_ICONS[nextDose.form as MedicationForm] || 'pill'}
               medicationColor={nextDose.color}
               onPress={() => {}}
               onTakePhoto={() => {
-                // Navigate to camera for verification
+                router.push({
+                  pathname: '/verification/camera',
+                  params: { doseId: nextDose.id },
+                });
               }}
             />
           </View>
@@ -207,12 +188,17 @@ export default function TodayScreen() {
                 key={dose.id}
                 medicationName={dose.medicationName}
                 dosage={dose.dosage}
-                time={dose.time}
+                time={formatDoseTime(dose.scheduledAt)}
                 status={dose.status}
-                iconName={dose.iconName}
+                iconName={MEDICATION_FORM_ICONS[dose.form as MedicationForm] || 'pill'}
                 medicationColor={dose.color}
                 onPress={() => {}}
-                onTakePhoto={() => {}}
+                onTakePhoto={() => {
+                  router.push({
+                    pathname: '/verification/camera',
+                    params: { doseId: dose.id },
+                  });
+                }}
               />
             ))}
           </View>
@@ -236,9 +222,9 @@ export default function TodayScreen() {
                 key={dose.id}
                 medicationName={dose.medicationName}
                 dosage={dose.dosage}
-                time={dose.time}
+                time={formatDoseTime(dose.scheduledAt)}
                 status={dose.status}
-                iconName={dose.iconName}
+                iconName={MEDICATION_FORM_ICONS[dose.form as MedicationForm] || 'pill'}
                 medicationColor={dose.color}
                 onPress={() => {}}
               />

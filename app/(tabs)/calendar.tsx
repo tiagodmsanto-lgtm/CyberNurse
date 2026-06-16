@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import { getDosesByDateRange } from '../../src/services/medicationService';
 
 // ── Types ──────────────────────────────────────────────
 type DayStatus = 'all' | 'partial' | 'missed' | 'none';
@@ -108,10 +110,56 @@ export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDay, setSelectedDay] = useState<number | null>(today.getDate());
+  const [focusKey, setFocusKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setFocusKey(k => k + 1);
+    }, [])
+  );
 
   // Generate calendar grid data
   const { monthData, calendarGrid, adherencePercent } = useMemo(() => {
     const data = generateMockData(currentYear, currentMonth);
+
+    // Fetch actual doses from database
+    let dbDoses: any[] = [];
+    try {
+      const startOfMonth = new Date(currentYear, currentMonth, 1).getTime();
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
+      dbDoses = getDosesByDateRange(startOfMonth, endOfMonth);
+    } catch (e) {
+      console.error('Failed to get database doses for calendar:', e);
+    }
+
+    // Group dbDoses by day
+    const dosesByDay = new Map<number, any[]>();
+    for (const dose of dbDoses) {
+      const day = new Date(dose.scheduledAt).getDate();
+      if (!dosesByDay.has(day)) {
+        dosesByDay.set(day, []);
+      }
+      dosesByDay.get(day)!.push({
+        id: dose.id,
+        name: dose.medicationName,
+        dosage: dose.dosage,
+        time: new Date(dose.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        taken: dose.status === 'taken',
+      });
+    }
+
+    // Merge actual doses into Map
+    dosesByDay.forEach((doses, day) => {
+      const takenCount = doses.filter(d => d.taken).length;
+      let status: DayStatus = 'none';
+      if (doses.length > 0) {
+        if (takenCount === doses.length) status = 'all';
+        else if (takenCount > 0) status = 'partial';
+        else status = 'missed';
+      }
+      data.set(day, { day, status, doses });
+    });
+
     const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
@@ -132,7 +180,7 @@ export default function CalendarScreen() {
     const pct = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
 
     return { monthData: data, calendarGrid: grid, adherencePercent: pct };
-  }, [currentMonth, currentYear]);
+  }, [currentMonth, currentYear, focusKey]);
 
   const isToday = useCallback(
     (day: number) =>

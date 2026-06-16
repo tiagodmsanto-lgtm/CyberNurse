@@ -26,7 +26,119 @@ export function getDatabase(): SQLite.SQLiteDatabase {
  *
  * Call this **once** during app startup (e.g. in the root layout).
  */
+import { Platform } from 'react-native';
+
 export function initDatabase(): void {
+  if (Platform.OS === 'web') {
+    console.warn('expo-sqlite synchronous API is not supported on Web. Using an in-memory mock.');
+    // In-memory data store for Web
+    const webData = {
+      medications: [] as any[],
+      schedules: [] as any[],
+      doses: [] as any[],
+      stock: [] as any[],
+    };
+
+    const mockDb = {
+      execSync: () => {},
+      closeSync: () => {},
+      runSync: (query: string, params: any[] = []) => {
+        const sql = query.trim().toUpperCase();
+        if (sql.startsWith('INSERT INTO MEDICATIONS')) {
+          webData.medications.push({
+            id: params[0], name: params[1], dosage: params[2], form: params[3], color: params[4],
+            photoUri: params[5], instructions: params[6], createdAt: params[7], updatedAt: params[8],
+            isActive: params[9]
+          });
+        } else if (sql.startsWith('INSERT INTO SCHEDULES')) {
+          webData.schedules.push({
+            id: params[0], medicationId: params[1], frequencyType: params[2], frequencyValue: params[3],
+            times: params[4], startDate: params[5], endDate: params[6], mealRelation: params[7]
+          });
+        } else if (sql.startsWith('INSERT INTO STOCK')) {
+          webData.stock.push({
+            id: params[0], medicationId: params[1], currentQuantity: params[2], minThreshold: params[3],
+            expiryDate: params[4], lastRefillDate: params[5]
+          });
+        } else if (sql.startsWith('INSERT INTO DOSES')) {
+          webData.doses.push({
+            id: params[0], scheduleId: params[1], medicationId: params[2], scheduledAt: params[3],
+            status: params[4], verificationPhoto: params[5], verificationScore: params[6],
+            verificationMethod: params[7], notes: params[8]
+          });
+        } else if (sql.startsWith('UPDATE MEDICATIONS SET ISACTIVE')) {
+          // archiveMedication
+          const med = webData.medications.find(m => m.id === params[0]);
+          if (med) med.isActive = 0;
+        } else if (sql.startsWith('UPDATE DOSES SET STATUS = \'TAKEN\'')) {
+          // verifyDoseInDb
+          const dose = webData.doses.find(d => d.id === params[4]);
+          if (dose) {
+            dose.status = 'taken'; dose.takenAt = params[0]; dose.verificationPhoto = params[1];
+            dose.verificationScore = params[2]; dose.verificationMethod = params[3];
+          }
+        } else if (sql.startsWith('UPDATE DOSES SET STATUS = ?')) {
+          // updateDoseStatusInDb
+          const dose = webData.doses.find(d => d.id === params[2]);
+          if (dose) {
+            dose.status = params[0]; dose.takenAt = params[1];
+          }
+        } else if (sql.startsWith('UPDATE STOCK SET CURRENTQUANTITY')) {
+          // verifyDoseInDb stock decrease
+          const stock = webData.stock.find(s => s.medicationId === params[0]);
+          if (stock && stock.currentQuantity > 0) stock.currentQuantity -= 1;
+        } else if (sql.startsWith('DELETE FROM MEDICATIONS')) {
+          webData.medications = webData.medications.filter(m => m.id !== params[0]);
+          webData.schedules = webData.schedules.filter(s => s.medicationId !== params[0]);
+          webData.stock = webData.stock.filter(s => s.medicationId !== params[0]);
+          webData.doses = webData.doses.filter(d => d.medicationId !== params[0]);
+        }
+        return { changes: 1, lastInsertRowId: 1 };
+      },
+      getAllSync: (query: string, params: any[] = []) => {
+        const sql = query.trim().toUpperCase();
+        if (sql.includes('FROM MEDICATIONS WHERE ISACTIVE = 1')) {
+          return webData.medications.filter(m => m.isActive === 1).sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sql.includes('FROM SCHEDULES WHERE MEDICATIONID')) {
+          return webData.schedules.filter(s => s.medicationId === params[0]);
+        } else if (sql.includes('FROM STOCK')) {
+          return webData.stock;
+        } else if (sql.includes('FROM DOSES D') && sql.includes('JOIN MEDICATIONS M')) {
+          // getDosesByDateRange
+          const start = params[0], end = params[1];
+          return webData.doses
+            .filter(d => d.scheduledAt >= start && d.scheduledAt <= end)
+            .map(d => {
+              const m = webData.medications.find(med => med.id === d.medicationId);
+              return { ...d, medicationName: m?.name, dosage: m?.dosage, color: m?.color, form: m?.form };
+            })
+            .sort((a, b) => a.scheduledAt - b.scheduledAt);
+        }
+        return [];
+      },
+      getFirstSync: (query: string, params: any[] = []) => {
+        const sql = query.trim().toUpperCase();
+        if (sql.includes('FROM MEDICATIONS WHERE ID')) {
+          return webData.medications.find(m => m.id === params[0]) || null;
+        } else if (sql.includes('FROM STOCK WHERE MEDICATIONID')) {
+          return webData.stock.find(s => s.medicationId === params[0]) || null;
+        } else if (sql.includes('FROM DOSES WHERE SCHEDULEID = ? AND SCHEDULEDAT')) {
+          return webData.doses.find(d => d.scheduleId === params[0] && d.scheduledAt === params[1]) || null;
+        } else if (sql.includes('FROM DOSES D') && sql.includes('WHERE D.ID')) {
+          const d = webData.doses.find(dose => dose.id === params[0]);
+          if (!d) return null;
+          const m = webData.medications.find(med => med.id === d.medicationId);
+          return { ...d, medicationName: m?.name, dosage: m?.dosage, color: m?.color, form: m?.form };
+        } else if (sql.includes('SELECT MEDICATIONID FROM DOSES WHERE ID')) {
+           return webData.doses.find(d => d.id === params[0]) || null;
+        }
+        return null;
+      },
+    };
+    db = mockDb as unknown as SQLite.SQLiteDatabase;
+    return;
+  }
+
   db = SQLite.openDatabaseSync('cybernurse.db');
 
   // Enable WAL mode for better concurrent read performance

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
+import { useDoseStore } from '../../src/stores';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -38,11 +40,25 @@ type VerificationState = 'camera' | 'analyzing' | 'success' | 'failed';
 
 export default function CameraVerificationScreen() {
   const insets = useSafeAreaInsets();
+  const { doseId } = useLocalSearchParams<{ doseId: string }>();
   const [state, setState] = useState<VerificationState>('camera');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
+  const [doseData, setDoseData] = useState<any>(null);
+  
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (doseId) {
+      try {
+        const data = getDoseWithMedicationById(doseId);
+        setDoseData(data);
+      } catch (e) {
+        console.error('Failed to load dose data for camera verification:', e);
+      }
+    }
+  }, [doseId]);
 
   // Start pulse animation for the camera button
   React.useEffect(() => {
@@ -51,12 +67,12 @@ export default function CameraVerificationScreen() {
         Animated.timing(pulseAnim, {
           toValue: 1.15,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
@@ -72,12 +88,12 @@ export default function CameraVerificationScreen() {
           Animated.timing(scanLineAnim, {
             toValue: 1,
             duration: 1500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(scanLineAnim, {
             toValue: 0,
             duration: 1500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       );
@@ -87,22 +103,32 @@ export default function CameraVerificationScreen() {
   }, [state]);
 
   const handleCapture = useCallback(() => {
+    if (!doseId) return;
+
     // Simulate photo capture
     setCapturedImage('captured');
     setState('analyzing');
 
-    // Simulate AI analysis (2 seconds)
+    // Simulate AI analysis (2.5 seconds)
     setTimeout(() => {
-      // Simulate 70% success rate
+      // 70% success rate
       const isSuccess = Math.random() > 0.3;
       if (isSuccess) {
-        setState('success');
+        try {
+          verifyDoseInDb(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
+          useDoseStore.getState().verifyDose(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
+          setState('success');
+        } catch (e) {
+          console.error('Failed to update dose in database:', e);
+          Alert.alert('Erro', 'Não foi possível registrar a dose.');
+          setState('camera');
+        }
       } else {
         setState('failed');
         setAttempts(prev => prev + 1);
       }
     }, 2500);
-  }, []);
+  }, [doseId]);
 
   const handleRetry = useCallback(() => {
     if (attempts >= 3) {
@@ -113,7 +139,14 @@ export default function CameraVerificationScreen() {
           {
             text: 'Confirmar Manualmente',
             onPress: () => {
-              // TODO: Record manual confirmation
+              if (doseId) {
+                try {
+                  verifyDoseInDb(doseId, 'file://manual_confirmation.jpg', 1.0, 'manual');
+                  useDoseStore.getState().verifyDose(doseId, 'file://manual_confirmation.jpg', 1.0, 'manual');
+                } catch (e) {
+                  console.error('Failed manual verification:', e);
+                }
+              }
               router.back();
             },
           },
@@ -130,10 +163,9 @@ export default function CameraVerificationScreen() {
       setCapturedImage(null);
       setState('camera');
     }
-  }, [attempts]);
+  }, [attempts, doseId]);
 
   const handleSuccess = useCallback(() => {
-    // TODO: Update dose status to 'taken'
     router.back();
   }, []);
 
@@ -252,7 +284,9 @@ export default function CameraVerificationScreen() {
             <View style={styles.medicationInfo}>
               <MaterialCommunityIcons name="pill" size={20} color={C.primary} />
               <Text style={styles.medicationInfoText}>
-                Metformina 850mg • 12:00
+                {doseData 
+                  ? `${doseData.medicationName} ${doseData.dosage} • ${new Date(doseData.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` 
+                  : 'Medicamento'}
               </Text>
             </View>
 
