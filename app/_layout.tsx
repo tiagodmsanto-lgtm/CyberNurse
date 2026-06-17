@@ -8,6 +8,7 @@ import { PaperProvider } from 'react-native-paper';
 import { PaperTheme } from '../src/theme';
 import { initDatabase } from '../src/services/database';
 import { logScreenView } from '../src/services/analytics';
+import { logCrashMessage } from '../src/services/crashlytics';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -42,6 +43,9 @@ export default function RootLayout() {
       }
     }
     setupDb();
+    
+    // Log app initialization to Crashlytics to leave a breadcrumb
+    logCrashMessage('App RootLayout mounted and Database init started');
   }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.

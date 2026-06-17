@@ -395,6 +395,9 @@ export default function AddMedicationScreen() {
             autoCapitalize="words"
             returnKeyType="next"
             onFocus={() => { if (name.length >= 3) setShowDropdown(true); }}
+            onBlur={() => {
+              setTimeout(() => setShowDropdown(false), 200);
+            }}
           />
         </View>
         {showDropdown && searchResults.length > 0 && (
@@ -1686,5 +1689,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: C.white,
+  },
+  
+  // Autocomplete
+  autocompleteDropdown: {
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: C.primaryLight,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  autocompleteItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: C.surfaceAlt,
+    backgroundColor: C.white,
+  },
+  autocompleteTextName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: C.textPrimary,
+  },
+  autocompleteTextDesc: {
+    fontSize: 13,
+    color: C.textSecondary,
+    marginTop: 2,
   },
 });

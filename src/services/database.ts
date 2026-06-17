@@ -115,6 +115,16 @@ export async function initDatabase(): Promise<void> {
               return { ...d, medicationName: m?.name, dosage: m?.dosage, color: m?.color, form: m?.form };
             })
             .sort((a, b) => a.scheduledAt - b.scheduledAt);
+        } else if (sql.includes('WHERE NAME LIKE')) {
+          // Mock search response for Web testing
+          return [
+            { id: '1', name: 'Losartana Potássica', dosage: '50mg', form: 'comprimido', category: 'Medicamento' },
+            { id: '2', name: 'Paracetamol', dosage: '750mg', form: 'comprimido', category: 'Medicamento' },
+            { id: '3', name: 'Dipirona', dosage: '500mg', form: 'comprimido', category: 'Medicamento' },
+            { id: '4', name: 'Amoxicilina', dosage: '500mg', form: 'capsula', category: 'Medicamento' }
+          ].filter(item => item.name.toUpperCase().includes(params[0].replace(/%/g, '').toUpperCase()));
+        } else if (sql.includes('MATCH ?')) {
+           return []; // Web doesn't support FTS, let it fallback to LIKE
         }
         return [];
       },
@@ -151,9 +161,13 @@ export async function initDatabase(): Promise<void> {
   }
 
   const dbInfo = await FileSystem.getInfoAsync(dbPath);
-  if (!dbInfo.exists) {
-    console.log('Banco de dados não encontrado, tentando copiar dos assets...');
+  // Se o arquivo não existir ou for muito pequeno (< 1MB), significa que está vazio
+  if (!dbInfo.exists || (dbInfo.exists && dbInfo.size && dbInfo.size < 1000000)) {
+    console.log('Banco de dados não encontrado ou vazio, copiando dos assets...');
     try {
+      if (dbInfo.exists) {
+        await FileSystem.deleteAsync(dbPath);
+      }
       // Se tivermos gerado o cybernurse.db na pasta assets, nós copiamos para o local da aplicação
       const asset = Asset.fromModule(require('../../assets/cybernurse.db'));
       await asset.downloadAsync();

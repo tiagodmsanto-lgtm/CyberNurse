@@ -60,7 +60,6 @@ export function getMedicationById(id: string): Medication | null {
 export function searchMedications(query: string, limit: number = 10): any[] {
   if (!query || query.length < 3) return [];
   const db = getDatabase();
-  // We use simple wildcard suffix for the query terms
   const safeQuery = query.replace(/"/g, '""').trim() + '*';
   try {
     const rows = db.getAllSync(
@@ -72,9 +71,19 @@ export function searchMedications(query: string, limit: number = 10): any[] {
        LIMIT ?`,
       [safeQuery, limit]
     );
-    return rows;
+    if (rows.length > 0) return rows;
   } catch (e) {
     console.warn('FTS search failed', e);
+  }
+
+  // Fallback to LIKE
+  try {
+    const likeQuery = `%${query.trim()}%`;
+    return db.getAllSync(
+      `SELECT * FROM medications WHERE name LIKE ? LIMIT ?`,
+      [likeQuery, limit]
+    );
+  } catch(e2) {
     return [];
   }
 }
@@ -93,9 +102,19 @@ export function searchAlimentos(query: string, limit: number = 10): any[] {
        LIMIT ?`,
       [safeQuery, limit]
     );
-    return rows;
+    if (rows.length > 0) return rows;
   } catch (e) {
     console.warn('FTS search alimentos failed', e);
+  }
+
+  // Fallback to LIKE
+  try {
+    const likeQuery = `%${query.trim()}%`;
+    return db.getAllSync(
+      `SELECT * FROM alimentos WHERE name LIKE ? LIMIT ?`,
+      [likeQuery, limit]
+    );
+  } catch(e2) {
     return [];
   }
 }

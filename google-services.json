@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "435117238163",
+    "project_id": "cybernurse-4c456",
+    "storage_bucket": "cybernurse-4c456.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435117238163:android:606055eb88a378d5826a66",
+        "android_client_info": {
+          "package_name": "com.InkluDevs.CyberNurse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDF_k_Ys2I_E93j42VoNEGdJKn2CMqtKyM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
