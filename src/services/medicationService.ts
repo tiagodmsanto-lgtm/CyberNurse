@@ -55,6 +55,51 @@ export function getMedicationById(id: string): Medication | null {
   return row ? rowToMedication(row) : null;
 }
 
+// ─── SEARCH (FTS) ──────────────────────────────
+
+export function searchMedications(query: string, limit: number = 10): any[] {
+  if (!query || query.length < 3) return [];
+  const db = getDatabase();
+  // We use simple wildcard suffix for the query terms
+  const safeQuery = query.replace(/"/g, '""').trim() + '*';
+  try {
+    const rows = db.getAllSync(
+      `SELECT m.* 
+       FROM medications m
+       JOIN medications_fts fts ON m.rowid = fts.rowid
+       WHERE medications_fts MATCH ?
+       ORDER BY rank
+       LIMIT ?`,
+      [safeQuery, limit]
+    );
+    return rows;
+  } catch (e) {
+    console.warn('FTS search failed', e);
+    return [];
+  }
+}
+
+export function searchAlimentos(query: string, limit: number = 10): any[] {
+  if (!query || query.length < 3) return [];
+  const db = getDatabase();
+  const safeQuery = query.replace(/"/g, '""').trim() + '*';
+  try {
+    const rows = db.getAllSync(
+      `SELECT a.* 
+       FROM alimentos a
+       JOIN alimentos_fts fts ON a.rowid = fts.rowid
+       WHERE alimentos_fts MATCH ?
+       ORDER BY rank
+       LIMIT ?`,
+      [safeQuery, limit]
+    );
+    return rows;
+  } catch (e) {
+    console.warn('FTS search alimentos failed', e);
+    return [];
+  }
+}
+
 // ─── CREATE ────────────────────────────────────
 
 /** Fields required to create a new medication (id + timestamps auto-generated) */
@@ -240,77 +285,87 @@ export function generateDosesForDay(date: Date): void {
   
   const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
-  for (const med of medications) {
-    const schedulesRows = db.getAllSync<ScheduleRow>(
-      'SELECT * FROM schedules WHERE medicationId = ?',
-      [med.id]
-    );
-    
-    for (const sched of schedulesRows) {
-      if (sched.startDate > endOfDay.getTime()) continue;
-      if (sched.endDate && sched.endDate < startOfDay.getTime()) continue;
+  // Envolvemos a geração de doses em uma transação para evitar que cada 
+  // insert cause um flush no disco (o que causa o travamento de N+1 Queries)
+  const generateLogic = () => {
+    for (const med of medications) {    
+      const schedulesRows = db.getAllSync<ScheduleRow>(
+        'SELECT * FROM schedules WHERE medicationId = ?',
+        [med.id]
+      );
       
-      let shouldGenerate = false;
-      if (sched.frequencyType === 'daily') {
-        shouldGenerate = true;
-      } else if (sched.frequencyType === 'specific_days') {
-        try {
-          const val = JSON.parse(sched.frequencyValue);
-          if (Array.isArray(val.days) && val.days.includes(dayOfWeek)) {
-            shouldGenerate = true;
+      for (const sched of schedulesRows) {
+        if (sched.startDate > endOfDay.getTime()) continue;
+        if (sched.endDate && sched.endDate < startOfDay.getTime()) continue;
+        
+        let shouldGenerate = false;
+        if (sched.frequencyType === 'daily') {
+          shouldGenerate = true;
+        } else if (sched.frequencyType === 'specific_days') {
+          try {
+            const val = JSON.parse(sched.frequencyValue);
+            if (Array.isArray(val.days) && val.days.includes(dayOfWeek)) {
+              shouldGenerate = true;
+            }
+          } catch (e) {
+            console.error('Failed to parse frequencyValue for schedule', sched.id, e);
           }
-        } catch (e) {
-          console.error('Failed to parse frequencyValue for schedule', sched.id, e);
+        } else if (sched.frequencyType === 'interval') {
+          shouldGenerate = true; 
         }
-      } else if (sched.frequencyType === 'interval') {
-        shouldGenerate = true; 
-      }
-      
-      if (!shouldGenerate) continue;
-      
-      let timesList: string[] = [];
-      try {
-        timesList = JSON.parse(sched.times);
-      } catch (e) {
-        console.error('Failed to parse times for schedule', sched.id, e);
-        continue;
-      }
-      
-      for (const timeStr of timesList) {
-        const [hourStr, minStr] = timeStr.split(':');
-        const hour = parseInt(hourStr, 10);
-        const min = parseInt(minStr, 10);
         
-        const scheduledTime = new Date(date);
-        scheduledTime.setHours(hour, min, 0, 0);
-        const scheduledAt = scheduledTime.getTime();
+        if (!shouldGenerate) continue;
         
-        const existing = db.getFirstSync<{ id: string }>(
-          'SELECT id FROM doses WHERE scheduleId = ? AND scheduledAt = ?',
-          [sched.id, scheduledAt]
-        );
+        let timesList: string[] = [];
+        try {
+          timesList = JSON.parse(sched.times);
+        } catch (e) {
+          console.error('Failed to parse times for schedule', sched.id, e);
+          continue;
+        }
         
-        if (!existing) {
-          const doseId = generateId();
-          db.runSync(
-            `INSERT INTO doses 
-               (id, scheduleId, medicationId, scheduledAt, status, verificationPhoto, verificationScore, verificationMethod, notes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              doseId,
-              sched.id,
-              med.id,
-              scheduledAt,
-              'pending',
-              null,
-              null,
-              null,
-              null
-            ]
+        for (const timeStr of timesList) {
+          const [hourStr, minStr] = timeStr.split(':');
+          const hour = parseInt(hourStr, 10);
+          const min = parseInt(minStr, 10);
+          
+          const scheduledTime = new Date(date);
+          scheduledTime.setHours(hour, min, 0, 0);
+          const scheduledAt = scheduledTime.getTime();
+          
+          const existing = db.getFirstSync<{ id: string }>(
+            'SELECT id FROM doses WHERE scheduleId = ? AND scheduledAt = ?',
+            [sched.id, scheduledAt]
           );
+          
+          if (!existing) {
+            const doseId = generateId();
+            db.runSync(
+              `INSERT INTO doses 
+                 (id, scheduleId, medicationId, scheduledAt, status, verificationPhoto, verificationScore, verificationMethod, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                doseId,
+                sched.id,
+                med.id,
+                scheduledAt,
+                'pending',
+                null,
+                null,
+                null,
+                null
+              ]
+            );
+          }
         }
       }
     }
+  };
+
+  if (typeof db.withTransactionSync === 'function') {
+    db.withTransactionSync(generateLogic);
+  } else {
+    generateLogic();
   }
 }
 

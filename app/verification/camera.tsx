@@ -174,6 +174,15 @@ export default function CameraVerificationScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Top Right Close Button */}
+      <TouchableOpacity 
+        style={[styles.topRightCloseButton, { top: Math.max(insets.top + 16, 16) }]}
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+      >
+        <MaterialCommunityIcons name="close" size={28} color={C.white} />
+      </TouchableOpacity>
+
       {/* Camera Preview Area */}
       <View style={styles.cameraArea}>
         {state === 'camera' && (
@@ -402,6 +411,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  topRightCloseButton: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 50,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Camera Area

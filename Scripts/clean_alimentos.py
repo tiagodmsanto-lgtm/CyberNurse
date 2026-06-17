@@ -4,7 +4,7 @@ def process_alimentos_data(input_file, output_file):
     print(f"Lendo o arquivo bruto: {input_file}...")
     try:
         # 1. Ler o arquivo com separador ';' e codificação 'latin1'
-        df = pd.read_csv(input_file, sep=';', encoding='latin1', low_memory=False)
+        df = pd.read_csv(input_file, sep=';', encoding='latin1', low_memory=False, on_bad_lines='skip')
         
         # Verificar se as colunas necessárias existem
         required_cols = ['ST_SITUACAO_REGISTRO', 'NO_PRODUTO', 'DS_CATEGORIA_PRODUTO']

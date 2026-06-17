@@ -3,6 +3,8 @@
 // ─────────────────────────────────────────────
 
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
 
 // ─── Singleton database instance ───────────────
 let db: SQLite.SQLiteDatabase | null = null;
@@ -28,7 +30,7 @@ export function getDatabase(): SQLite.SQLiteDatabase {
  */
 import { Platform } from 'react-native';
 
-export function initDatabase(): void {
+export async function initDatabase(): Promise<void> {
   if (Platform.OS === 'web') {
     console.warn('expo-sqlite synchronous API is not supported on Web. Using an in-memory mock.');
     // In-memory data store for Web
@@ -139,7 +141,33 @@ export function initDatabase(): void {
     return;
   }
 
-  db = SQLite.openDatabaseSync('cybernurse.db');
+  const dbName = 'cybernurse.db';
+  const dbDir = FileSystem.documentDirectory + 'SQLite/';
+  const dbPath = dbDir + dbName;
+
+  const dirInfo = await FileSystem.getInfoAsync(dbDir);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
+  }
+
+  const dbInfo = await FileSystem.getInfoAsync(dbPath);
+  if (!dbInfo.exists) {
+    console.log('Banco de dados não encontrado, tentando copiar dos assets...');
+    try {
+      // Se tivermos gerado o cybernurse.db na pasta assets, nós copiamos para o local da aplicação
+      const asset = Asset.fromModule(require('../../assets/cybernurse.db'));
+      await asset.downloadAsync();
+      await FileSystem.copyAsync({
+        from: asset.localUri || asset.uri,
+        to: dbPath,
+      });
+      console.log('Banco de dados pré-populado carregado com sucesso!');
+    } catch (e) {
+      console.warn('Nenhum banco pré-populado encontrado nos assets, iniciando vazio.', e);
+    }
+  }
+
+  db = SQLite.openDatabaseSync(dbName);
 
   // Enable WAL mode for better concurrent read performance
   db.execSync('PRAGMA journal_mode = WAL;');
@@ -168,6 +196,43 @@ function createTables(): void {
       isActive      INTEGER NOT NULL DEFAULT 1
     );
   `);
+
+  database.execSync(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS medications_fts USING fts5(
+        name, 
+        dosage, 
+        content='medications', 
+        content_rowid='rowid'
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS alimentos (
+      id            TEXT PRIMARY KEY NOT NULL,
+      name          TEXT NOT NULL,
+      category      TEXT NOT NULL,
+      createdAt     INTEGER NOT NULL,
+      updatedAt     INTEGER NOT NULL,
+      isActive      INTEGER NOT NULL DEFAULT 1
+    );
+  `);
+
+  database.execSync(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS alimentos_fts USING fts5(
+        name, 
+        category, 
+        content='alimentos', 
+        content_rowid='rowid'
+    );
+  `);
+
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_ai AFTER INSERT ON medications BEGIN INSERT INTO medications_fts(rowid, name, dosage) VALUES (new.rowid, new.name, new.dosage); END;`);
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_ad AFTER DELETE ON medications BEGIN INSERT INTO medications_fts(medications_fts, rowid, name, dosage) VALUES('delete', old.rowid, old.name, old.dosage); END;`);
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_au AFTER UPDATE ON medications BEGIN INSERT INTO medications_fts(medications_fts, rowid, name, dosage) VALUES('delete', old.rowid, old.name, old.dosage); INSERT INTO medications_fts(rowid, name, dosage) VALUES (new.rowid, new.name, new.dosage); END;`);
+
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_ai AFTER INSERT ON alimentos BEGIN INSERT INTO alimentos_fts(rowid, name, category) VALUES (new.rowid, new.name, new.category); END;`);
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_ad AFTER DELETE ON alimentos BEGIN INSERT INTO alimentos_fts(alimentos_fts, rowid, name, category) VALUES('delete', old.rowid, old.name, old.category); END;`);
+  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_au AFTER UPDATE ON alimentos BEGIN INSERT INTO alimentos_fts(alimentos_fts, rowid, name, category) VALUES('delete', old.rowid, old.name, old.category); INSERT INTO alimentos_fts(rowid, name, category) VALUES (new.rowid, new.name, new.category); END;`);
 
   database.execSync(`
     CREATE TABLE IF NOT EXISTS schedules (
@@ -243,6 +308,10 @@ function createTables(): void {
  * Uses `Math.random()` — sufficient for local IDs; not cryptographic.
  */
 export function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older JS engines if crypto is not available
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
     /[xy]/g,
     (char) => {

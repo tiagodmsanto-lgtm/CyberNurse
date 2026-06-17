@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { getAllMedications } from '../../src/services/medicationService';
 import { getDatabase } from '../../src/services/database';
 
@@ -40,7 +40,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     title: 'Conta',
     items: [
-      { icon: 'account-outline', title: 'Dados pessoais' },
+      { icon: 'account-outline', title: 'Dados pessoais', onPress: () => router.push('/profile/personal-data') },
       { icon: 'bell-outline', title: 'Notificações' },
       { icon: 'translate', title: 'Idioma', trailing: (
         <Text style={{ fontSize: 14, color: '#757575', marginRight: 4 }}>
@@ -237,7 +237,7 @@ export default function ProfileScreen() {
 
         {/* Footer */}
         <Text style={styles.footerText}>
-          Cyber Nurse © 2025{'\n'}
+          Cyber Nurse © 2025 by InkluDevs{'\n'}
           Feito com ❤️ para sua saúde
         </Text>
 

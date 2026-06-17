@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { createMedication, generateDosesForDay } from '../../src/services/medicationService';
+import { createMedication, generateDosesForDay, searchMedications, searchAlimentos } from '../../src/services/medicationService';
 import { getDatabase, generateId } from '../../src/services/database';
 import { useMedicationStore } from '../../src/stores';
 import { logMedicationAdded } from '../../src/services/analytics';
@@ -125,6 +125,27 @@ export default function AddMedicationScreen() {
   const [selectedForm, setSelectedForm] = useState<MedicationFormType | null>(null);
   const [selectedColor, setSelectedColor] = useState(COLOR_PRESETS[0]);
   const [instructions, setInstructions] = useState('');
+
+  // Autocomplete state
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleNameChange = useCallback((text: string) => {
+    setName(text);
+    if (text.length >= 3) {
+      try {
+        const meds = searchMedications(text, 5);
+        const foods = searchAlimentos(text, 3);
+        setSearchResults([...meds, ...foods]);
+        setShowDropdown(true);
+      } catch (e) {
+        console.warn('Autocomplete query error:', e);
+      }
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
+  }, []);
 
   // Step 2: Schedule
   const [frequencyType, setFrequencyType] = useState<FrequencyType>('daily');
@@ -265,8 +286,14 @@ export default function AddMedicationScreen() {
       if (expiryDate.trim()) {
         const [dayStr, monthStr, yearStr] = expiryDate.split('/');
         if (dayStr && monthStr && yearStr) {
+          let year = parseInt(yearStr, 10);
+          // Correção do Bug de Date do Javascript: 
+          // Anos < 100 são traduzidos para 19xx. '24' vira 1924 se não corrigirmos.
+          if (year < 100) {
+            year += 2000;
+          }
           const date = new Date(
-            parseInt(yearStr, 10),
+            year,
             parseInt(monthStr, 10) - 1,
             parseInt(dayStr, 10)
           );
@@ -308,8 +335,8 @@ export default function AddMedicationScreen() {
         );
       }
       
-      // Automatically redirect to the home page (index)
-      router.replace('/');
+      // Automatically redirect to the medications tab
+      router.replace('/medications');
     } catch (error) {
       console.error('Failed to save medication:', error);
       Alert.alert('Erro', 'Não foi possível salvar o medicamento.');
@@ -364,11 +391,30 @@ export default function AddMedicationScreen() {
             placeholder="Ex: Losartana"
             placeholderTextColor={C.textSecondary}
             value={name}
-            onChangeText={setName}
+            onChangeText={handleNameChange}
             autoCapitalize="words"
             returnKeyType="next"
+            onFocus={() => { if (name.length >= 3) setShowDropdown(true); }}
           />
         </View>
+        {showDropdown && searchResults.length > 0 && (
+          <View style={styles.autocompleteDropdown}>
+            {searchResults.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.autocompleteItem}
+                onPress={() => {
+                  setName(item.name);
+                  if (item.dosage && item.dosage !== 'N/A') setDosage(item.dosage);
+                  setShowDropdown(false);
+                }}
+              >
+                <Text style={styles.autocompleteTextName}>{item.name}</Text>
+                <Text style={styles.autocompleteTextDesc}>{item.dosage || item.category}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Dosage Input */}

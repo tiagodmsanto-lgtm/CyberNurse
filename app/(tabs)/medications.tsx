@@ -11,6 +11,7 @@ import {
   Platform,
   RefreshControl,
   ListRenderItemInfo,
+  InteractionManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -60,7 +61,13 @@ export default function MedicationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchMedications();
+      // Executa o acesso ao SQLite (que é síncrono) somente após as animações
+      // de transição de tela terminarem. Evita engasgos na navegação.
+      const task = InteractionManager.runAfterInteractions(() => {
+        // Opcional: Só dar fetch se tiver vazio ou deixar recarregar silenciosamente
+        fetchMedications();
+      });
+      return () => task.cancel();
     }, [fetchMedications])
   );
 
@@ -79,8 +86,11 @@ export default function MedicationsScreen() {
   // Pull-to-refresh handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchMedications();
-    setTimeout(() => setRefreshing(false), 800);
+    // Como a query SQLite local é síncrona, rodar em um tick separado melhora o feedback visual
+    requestAnimationFrame(() => {
+      fetchMedications();
+      setRefreshing(false);
+    });
   }, [fetchMedications]);
 
   // FAB press animation
