@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { PaperProvider } from 'react-native-paper';
 import { PaperTheme } from '../src/theme';
 import { initDatabase } from '../src/services/database';
+import { logScreenView } from '../src/services/analytics';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,6 +60,14 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname) {
+      logScreenView(pathname);
+    }
+  }, [pathname]);
+
   return (
     <PaperProvider theme={PaperTheme}>
       <StatusBar

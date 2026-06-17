@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import { createMedication, generateDosesForDay } from '../../src/services/medicationService';
 import { getDatabase, generateId } from '../../src/services/database';
 import { useMedicationStore } from '../../src/stores';
+import { logMedicationAdded } from '../../src/services/analytics';
 
 // ─── Inline Color Palette (Pokémon Center) ──────────────
 const C = {
@@ -293,6 +294,9 @@ export default function AddMedicationScreen() {
 
       // 5. Update medication store
       useMedicationStore.getState().addMedication(newMed);
+      
+      // Log event to Analytics
+      logMedicationAdded(newMed.name, times.length);
 
       if (Platform.OS === 'web') {
         window.alert(`Medicamento Salvo!\n${name} (${dosage}) foi adicionado com sucesso.`);

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
 import { useDoseStore } from '../../src/stores';
+import { logMedicationTaken } from '../../src/services/analytics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -117,6 +118,7 @@ export default function CameraVerificationScreen() {
         try {
           verifyDoseInDb(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
           useDoseStore.getState().verifyDose(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
+          logMedicationTaken(doseId, true);
           setState('success');
         } catch (e) {
           console.error('Failed to update dose in database:', e);
@@ -143,6 +145,7 @@ export default function CameraVerificationScreen() {
                 try {
                   verifyDoseInDb(doseId, 'file://manual_confirmation.jpg', 1.0, 'manual');
                   useDoseStore.getState().verifyDose(doseId, 'file://manual_confirmation.jpg', 1.0, 'manual');
+                  logMedicationTaken(doseId, false);
                 } catch (e) {
                   console.error('Failed manual verification:', e);
                 }
