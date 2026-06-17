@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -377,7 +378,7 @@ export default function AddMedicationScreen() {
       </Text>
 
       {/* Name Input */}
-      <View style={styles.inputGroup}>
+      <View style={[styles.inputGroup, { zIndex: 10 }]}>
         <Text style={styles.inputLabel}>Nome do Medicamento *</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
@@ -396,7 +397,7 @@ export default function AddMedicationScreen() {
             returnKeyType="next"
             onFocus={() => { if (name.length >= 3) setShowDropdown(true); }}
             onBlur={() => {
-              setTimeout(() => setShowDropdown(false), 200);
+              setTimeout(() => setShowDropdown(false), 500);
             }}
           />
         </View>
@@ -410,6 +411,7 @@ export default function AddMedicationScreen() {
                   setName(item.name);
                   if (item.dosage && item.dosage !== 'N/A') setDosage(item.dosage);
                   setShowDropdown(false);
+                  Keyboard.dismiss();
                 }}
               >
                 <Text style={styles.autocompleteTextName}>{item.name}</Text>
@@ -1693,16 +1695,20 @@ const styles = StyleSheet.create({
   
   // Autocomplete
   autocompleteDropdown: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
     backgroundColor: C.surface,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: C.primaryLight,
-    marginTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 10,
     overflow: 'hidden',
   },
   autocompleteItem: {

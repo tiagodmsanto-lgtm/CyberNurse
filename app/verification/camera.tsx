@@ -12,6 +12,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
 import { useDoseStore } from '../../src/stores';
 import { logMedicationTaken } from '../../src/services/analytics';
@@ -49,6 +50,9 @@ export default function CameraVerificationScreen() {
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     if (doseId) {
@@ -103,33 +107,40 @@ export default function CameraVerificationScreen() {
     }
   }, [state]);
 
-  const handleCapture = useCallback(() => {
-    if (!doseId) return;
+  const handleCapture = useCallback(async () => {
+    if (!doseId || !cameraRef.current) return;
 
-    // Simulate photo capture
-    setCapturedImage('captured');
-    setState('analyzing');
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      if (!photo) throw new Error('No photo taken');
+      
+      setCapturedImage(photo.uri);
+      setState('analyzing');
 
-    // Simulate AI analysis (2.5 seconds)
-    setTimeout(() => {
-      // 70% success rate
-      const isSuccess = Math.random() > 0.3;
-      if (isSuccess) {
-        try {
-          verifyDoseInDb(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
-          useDoseStore.getState().verifyDose(doseId, 'file://simulated_captured_photo.jpg', 0.94, 'ai');
-          logMedicationTaken(doseId, true);
-          setState('success');
-        } catch (e) {
-          console.error('Failed to update dose in database:', e);
-          Alert.alert('Erro', 'Não foi possível registrar a dose.');
-          setState('camera');
+      // Simulate AI analysis (2.5 seconds)
+      setTimeout(() => {
+        // 70% success rate
+        const isSuccess = Math.random() > 0.3;
+        if (isSuccess) {
+          try {
+            verifyDoseInDb(doseId, photo.uri, 0.94, 'ai');
+            useDoseStore.getState().verifyDose(doseId, photo.uri, 0.94, 'ai');
+            logMedicationTaken(doseId, true);
+            setState('success');
+          } catch (e) {
+            console.error('Failed to update dose in database:', e);
+            Alert.alert('Erro', 'Não foi possível registrar a dose.');
+            setState('camera');
+          }
+        } else {
+          setState('failed');
+          setAttempts(prev => prev + 1);
         }
-      } else {
-        setState('failed');
-        setAttempts(prev => prev + 1);
-      }
-    }, 2500);
+      }, 2500);
+    } catch (e) {
+      console.error('Failed to take picture:', e);
+      Alert.alert('Erro', 'Não foi possível capturar a foto da medicação.');
+    }
   }, [doseId]);
 
   const handleRetry = useCallback(() => {
@@ -172,6 +183,24 @@ export default function CameraVerificationScreen() {
     router.back();
   }, []);
 
+  if (!permission) {
+    return <View style={styles.container} />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <MaterialCommunityIcons name="camera-off" size={64} color={C.textSecondary} style={{ marginBottom: 16 }} />
+        <Text style={{ color: C.white, fontSize: 18, textAlign: 'center', marginBottom: 24, fontWeight: '600' }}>
+          Precisamos de acesso à sua câmera para verificar o medicamento.
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={requestPermission}>
+          <Text style={styles.retryButtonText}>Permitir Câmera</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Top Right Close Button */}
@@ -185,19 +214,17 @@ export default function CameraVerificationScreen() {
 
       {/* Camera Preview Area */}
       <View style={styles.cameraArea}>
+        {state !== 'camera' && capturedImage && (
+          <Image source={{ uri: capturedImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        )}
+        
         {state === 'camera' && (
           <>
-            {/* Simulated camera view */}
-            <View style={styles.cameraPreview}>
-              <MaterialCommunityIcons
-                name="camera"
-                size={80}
-                color="rgba(255,255,255,0.3)"
-              />
-              <Text style={styles.cameraPlaceholder}>
-                Câmera será ativada aqui
-              </Text>
-            </View>
+            <CameraView 
+              style={styles.cameraPreview} 
+              facing="back" 
+              ref={cameraRef}
+            />
 
             {/* Camera overlay frame */}
             <View style={styles.cameraOverlay}>
@@ -517,9 +544,10 @@ const styles = StyleSheet.create({
   // Analyzing
   analyzingContainer: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a0a1a',
+    backgroundColor: 'rgba(10, 10, 26, 0.85)',
   },
   scanLine: {
     position: 'absolute',
@@ -552,9 +580,10 @@ const styles = StyleSheet.create({
   // Success
   resultContainer: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a0a1a',
+    backgroundColor: 'rgba(10, 10, 26, 0.85)',
   },
   successCircle: {
     width: 120,

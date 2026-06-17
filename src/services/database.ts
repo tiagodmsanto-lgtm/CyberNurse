@@ -3,11 +3,12 @@
 // ─────────────────────────────────────────────
 
 import * as SQLite from 'expo-sqlite';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 
 // ─── Singleton database instance ───────────────
 let db: SQLite.SQLiteDatabase | null = null;
+let initError: any = null;
 
 /**
  * Returns the singleton database handle.
@@ -16,7 +17,7 @@ let db: SQLite.SQLiteDatabase | null = null;
 export function getDatabase(): SQLite.SQLiteDatabase {
   if (!db) {
     throw new Error(
-      '[CyberNurse] Database not initialised. Call initDatabase() first.',
+      `[CyberNurse] Database not initialised. Error: ${initError?.message || initError || 'Unknown'}`
     );
   }
   return db;
@@ -31,7 +32,8 @@ export function getDatabase(): SQLite.SQLiteDatabase {
 import { Platform } from 'react-native';
 
 export async function initDatabase(): Promise<void> {
-  if (Platform.OS === 'web') {
+  try {
+    if (Platform.OS === 'web') {
     console.warn('expo-sqlite synchronous API is not supported on Web. Using an in-memory mock.');
     // In-memory data store for Web
     const webData = {
@@ -189,6 +191,11 @@ export async function initDatabase(): Promise<void> {
   db.execSync('PRAGMA foreign_keys = ON;');
 
   createTables();
+  } catch (e: any) {
+    initError = e;
+    console.error("InitDB Error: ", e);
+    throw e;
+  }
 }
 
 // ─── Schema creation ───────────────────────────
@@ -212,15 +219,6 @@ function createTables(): void {
   `);
 
   database.execSync(`
-    CREATE VIRTUAL TABLE IF NOT EXISTS medications_fts USING fts5(
-        name, 
-        dosage, 
-        content='medications', 
-        content_rowid='rowid'
-    );
-  `);
-
-  database.execSync(`
     CREATE TABLE IF NOT EXISTS alimentos (
       id            TEXT PRIMARY KEY NOT NULL,
       name          TEXT NOT NULL,
@@ -230,23 +228,6 @@ function createTables(): void {
       isActive      INTEGER NOT NULL DEFAULT 1
     );
   `);
-
-  database.execSync(`
-    CREATE VIRTUAL TABLE IF NOT EXISTS alimentos_fts USING fts5(
-        name, 
-        category, 
-        content='alimentos', 
-        content_rowid='rowid'
-    );
-  `);
-
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_ai AFTER INSERT ON medications BEGIN INSERT INTO medications_fts(rowid, name, dosage) VALUES (new.rowid, new.name, new.dosage); END;`);
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_ad AFTER DELETE ON medications BEGIN INSERT INTO medications_fts(medications_fts, rowid, name, dosage) VALUES('delete', old.rowid, old.name, old.dosage); END;`);
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS medications_au AFTER UPDATE ON medications BEGIN INSERT INTO medications_fts(medications_fts, rowid, name, dosage) VALUES('delete', old.rowid, old.name, old.dosage); INSERT INTO medications_fts(rowid, name, dosage) VALUES (new.rowid, new.name, new.dosage); END;`);
-
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_ai AFTER INSERT ON alimentos BEGIN INSERT INTO alimentos_fts(rowid, name, category) VALUES (new.rowid, new.name, new.category); END;`);
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_ad AFTER DELETE ON alimentos BEGIN INSERT INTO alimentos_fts(alimentos_fts, rowid, name, category) VALUES('delete', old.rowid, old.name, old.category); END;`);
-  database.execSync(`CREATE TRIGGER IF NOT EXISTS alimentos_au AFTER UPDATE ON alimentos BEGIN INSERT INTO alimentos_fts(alimentos_fts, rowid, name, category) VALUES('delete', old.rowid, old.name, old.category); INSERT INTO alimentos_fts(rowid, name, category) VALUES (new.rowid, new.name, new.category); END;`);
 
   database.execSync(`
     CREATE TABLE IF NOT EXISTS schedules (

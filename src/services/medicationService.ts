@@ -40,7 +40,7 @@ function rowToMedication(row: MedicationRow): Medication {
 export function getAllMedications(): Medication[] {
   const db = getDatabase();
   const rows = db.getAllSync<MedicationRow>(
-    'SELECT * FROM medications WHERE isActive = 1 ORDER BY name ASC',
+    'SELECT m.* FROM medications m WHERE m.isActive = 1 AND EXISTS (SELECT 1 FROM schedules s WHERE s.medicationId = m.id) ORDER BY m.name ASC',
   );
   return rows.map(rowToMedication);
 }
