@@ -1,23 +1,25 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function NotFoundScreen() {
+  const { t } = useTranslation();
   return (
     <>
-      <Stack.Screen options={{ title: 'Ops!' }} />
+      <Stack.Screen options={{ title: t('notFound.ops') }} />
       <View style={styles.container}>
         <MaterialCommunityIcons
           name="alert-circle-outline"
           size={80}
           color="#F48FB1"
         />
-        <Text style={styles.title}>Tela não encontrada</Text>
+        <Text style={styles.title}>{t('notFound.title')}</Text>
         <Text style={styles.subtitle}>
-          Esta página não existe no Cyber Nurse
+          {t('notFound.subtitle')}
         </Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>← Voltar ao início</Text>
+          <Text style={styles.linkText}>{t('notFound.back')}</Text>
         </Link>
       </View>
     </>

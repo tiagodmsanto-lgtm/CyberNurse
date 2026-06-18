@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useTranslation } from 'react-i18next';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
 import { useDoseStore } from '../../src/stores';
 import { logMedicationTaken } from '../../src/services/analytics';
@@ -41,6 +42,7 @@ const C = {
 type VerificationState = 'camera' | 'analyzing' | 'success' | 'failed';
 
 export default function CameraVerificationScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { doseId } = useLocalSearchParams<{ doseId: string }>();
   const [state, setState] = useState<VerificationState>('camera');
@@ -129,7 +131,7 @@ export default function CameraVerificationScreen() {
             setState('success');
           } catch (e) {
             console.error('Failed to update dose in database:', e);
-            Alert.alert('Erro', 'Não foi possível registrar a dose.');
+            Alert.alert(t('camera.alerts.error'), t('camera.alerts.registerError'));
             setState('camera');
           }
         } else {
@@ -139,15 +141,15 @@ export default function CameraVerificationScreen() {
       }, 2500);
     } catch (e) {
       console.error('Failed to take picture:', e);
-      Alert.alert('Erro', 'Não foi possível capturar a foto da medicação.');
+      Alert.alert(t('camera.alerts.error'), t('camera.alerts.captureError'));
     }
   }, [doseId]);
 
   const handleRetry = useCallback(() => {
     if (attempts >= 3) {
       Alert.alert(
-        'Verificação Manual',
-        'Após 3 tentativas sem sucesso, você pode confirmar manualmente. Essa informação será registrada no histórico.',
+        t('camera.alerts.manualTitle'),
+        t('camera.alerts.manualMsg'),
         [
           {
             text: 'Confirmar Manualmente',
@@ -165,7 +167,7 @@ export default function CameraVerificationScreen() {
             },
           },
           {
-            text: 'Tentar Novamente',
+            text: t('camera.alerts.tryAgain'),
             onPress: () => {
               setCapturedImage(null);
               setState('camera');
@@ -192,10 +194,10 @@ export default function CameraVerificationScreen() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
         <MaterialCommunityIcons name="camera-off" size={64} color={C.textSecondary} style={{ marginBottom: 16 }} />
         <Text style={{ color: C.white, fontSize: 18, textAlign: 'center', marginBottom: 24, fontWeight: '600' }}>
-          Precisamos de acesso à sua câmera para verificar o medicamento.
+          {t('camera.permissionMsg')}
         </Text>
         <TouchableOpacity style={styles.retryButton} onPress={requestPermission}>
-          <Text style={styles.retryButtonText}>Permitir Câmera</Text>
+          <Text style={styles.retryButtonText}>{t('camera.permissionBtn')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -243,7 +245,7 @@ export default function CameraVerificationScreen() {
                   color={C.white}
                 />
                 <Text style={styles.guideText}>
-                  Mostre o medicamento na sua mão
+                  {t('camera.guideText')}
                 </Text>
               </View>
             </View>
@@ -273,9 +275,9 @@ export default function CameraVerificationScreen() {
                 size={48}
                 color={C.accent}
               />
-              <Text style={styles.analyzingTitle}>Analisando foto...</Text>
+              <Text style={styles.analyzingTitle}>{t('camera.analyzingTitle')}</Text>
               <Text style={styles.analyzingSubtitle}>
-                A IA está verificando se você está tomando sua medicação
+                {t('camera.analyzingSubtitle')}
               </Text>
             </View>
           </View>
@@ -290,9 +292,9 @@ export default function CameraVerificationScreen() {
                 color={C.white}
               />
             </View>
-            <Text style={styles.successTitle}>Verificado! ✨</Text>
+            <Text style={styles.successTitle}>{t('camera.successTitle')}</Text>
             <Text style={styles.successSubtitle}>
-              Medicação confirmada com sucesso
+              {t('camera.successSubtitle')}
             </Text>
           </View>
         )}
@@ -306,7 +308,7 @@ export default function CameraVerificationScreen() {
                 color={C.white}
               />
             </View>
-            <Text style={styles.failedTitle}>Não verificado</Text>
+            <Text style={styles.failedTitle}>{t('camera.failedTitle')}</Text>
             <Text style={styles.failedSubtitle}>
               Não foi possível confirmar a medicação na foto.{'\n'}
               Tentativa {attempts} de 3
@@ -325,7 +327,7 @@ export default function CameraVerificationScreen() {
               <Text style={styles.medicationInfoText}>
                 {doseData 
                   ? `${doseData.medicationName} ${doseData.dosage} • ${new Date(doseData.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` 
-                  : 'Medicamento'}
+                  : t('camera.medicationFallback')}
               </Text>
             </View>
 
@@ -335,9 +337,9 @@ export default function CameraVerificationScreen() {
                 style={styles.closeButton}
                 onPress={() => {
                   Alert.alert(
-                    '⚠️ Alarme Ativo',
-                    'O alarme só pode ser desativado tirando uma foto da sua medicação. Não é possível fechar esta tela.',
-                    [{ text: 'Entendi', style: 'cancel' }]
+                    t('camera.alerts.alarmActiveTitle'),
+                    t('camera.alerts.alarmActiveMsg'),
+                    [{ text: t('camera.alerts.understood'), style: 'cancel' }]
                   );
                 }}
               >
@@ -381,7 +383,7 @@ export default function CameraVerificationScreen() {
                 color={C.primary}
               />
               <Text style={styles.warningText}>
-                📸 Tire a foto para desativar o alarme
+                {t('camera.warningText')}
               </Text>
             </View>
           </>
@@ -399,7 +401,7 @@ export default function CameraVerificationScreen() {
               color={C.white}
             />
             <Text style={styles.successButtonText}>
-              Alarme Desativado — Voltar
+              {t('camera.successBtn')}
             </Text>
           </TouchableOpacity>
         )}
@@ -417,11 +419,11 @@ export default function CameraVerificationScreen() {
                 color={C.white}
               />
               <Text style={styles.retryButtonText}>
-                Tirar Nova Foto
+                {t('camera.retryBtn')}
               </Text>
             </TouchableOpacity>
             <Text style={styles.attemptsText}>
-              {3 - attempts} tentativa(s) restante(s)
+              {t('camera.attemptsLeft', { remaining: 3 - attempts })}
             </Text>
           </View>
         )}

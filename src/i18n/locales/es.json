@@ -1,0 +1,265 @@
+{
+  "profile": {
+    "headerTitle": "Perfil",
+    "userNameFallback": "Usuario",
+    "stats": {
+      "medications": "Medicamentos",
+      "adherence": "Adhesión",
+      "streak": "Racha (días)"
+    },
+    "sections": {
+      "appSettings": {
+        "title": "Ajustes de la App",
+        "personalData": "Datos Personales",
+        "notifications": "Notificaciones",
+        "language": "Idioma",
+        "languagePT": "Portugués",
+        "languageEN": "Inglés",
+        "languageES": "Español"
+      },
+      "health": {
+        "title": "Salud",
+        "subtitle": "Gestiona tu salud y datos",
+        "caregivers": "Cuidadores",
+        "reports": "Informes",
+        "export": "Exportar Datos"
+      },
+      "app": {
+        "title": "App",
+        "about": "Sobre Cyber Nurse",
+        "terms": "Términos de Uso",
+        "privacy": "Política de Privacidad",
+        "version": "Versión"
+      },
+      "account": {
+        "title": "Cuenta",
+        "logout": "Cerrar Sesión"
+      }
+    },
+    "footer": "Cyber Nurse © 2025 por InkluDevs\nHecho con ❤️ para tu salud",
+    "alerts": {
+      "error": "Error",
+      "imagePickError": "No se pudo seleccionar la imagen."
+    },
+    "languageSelect": {
+      "title": "Seleccionar Idioma",
+      "cancel": "Cancelar"
+    }
+  },
+  "personalData": {
+    "headerTitle": "Datos Personales",
+    "infoText": "Esta información ayuda a personalizar tus alarmas e informes de salud. Se guarda solo en este dispositivo.",
+    "accountSection": "Datos de Cuenta",
+    "displayName": "Nombre de Visualización",
+    "displayNamePlaceholder": "Cómo quieres que te llamen",
+    "basicMeasures": "Medidas Básicas",
+    "age": "Edad",
+    "agePlaceholder": "Ej: 34",
+    "bloodType": "Tipo de Sangre",
+    "bloodTypePlaceholder": "Ej: O+",
+    "weight": "Peso (kg)",
+    "weightPlaceholder": "Ej: 70.5",
+    "height": "Altura (cm)",
+    "heightPlaceholder": "Ej: 175",
+    "healthHistory": "Historial de Salud",
+    "allergies": "Alergias Conocidas",
+    "allergiesPlaceholder": "Ej: Penicilina, Maní...",
+    "chronicConditions": "Condiciones Crónicas",
+    "chronicConditionsPlaceholder": "Ej: Hipertensión, Diabetes tipo 2...",
+    "saveButton": "Guardar Datos",
+    "successAlert": {
+      "title": "¡Guardado con éxito!",
+      "message": "Tus datos personales han sido actualizados."
+    }
+  },
+  "tabs": {
+    "home": "Hoy",
+    "medications": "Medicamentos",
+    "calendar": "Calendario",
+    "profile": "Perfil"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches"
+    },
+    "days": "días",
+    "progressTitle": "Progreso Diario",
+    "dosesTaken": "de {{total}} medicamentos tomados",
+    "nextDose": "Próxima Dosis",
+    "pending": "Pendientes",
+    "completed": "Completados",
+    "emptyTitle": "Sin medicamentos hoy",
+    "emptySubtitle": "Añade tus medicamentos para empezar a recibir recordatorios"
+  },
+  "medications": {
+    "title": "Medicamentos",
+    "subtitle": "Gestiona todos tus medicamentos",
+    "searchPlaceholder": "Buscar medicamento...",
+    "filterAll": "Todos",
+    "filterActive": "Activos",
+    "filterArchived": "Archivados",
+    "clearSearch": "Limpiar búsqueda",
+    "countSingular": "medicamento",
+    "countPlural": "medicamentos",
+    "emptySearchTitle": "No se encontraron resultados",
+    "emptySearchSubtitle": "Intenta buscar con otros términos",
+    "emptyArchivedTitle": "Sin medicamentos archivados",
+    "emptyAllTitle": "No hay medicamentos registrados",
+    "emptyAllSubtitle": "Toca el botón + para añadir tu primer medicamento",
+    "addButton": "Añadir Medicamento"
+  },
+  "calendar": {
+    "title": "Calendario",
+    "subtitle": "Haz un seguimiento de tu adhesión",
+    "adherenceMonthly": "Adhesión Mensual",
+    "legendAll": "Todas tomadas",
+    "legendPartial": "Parcial",
+    "legendMissed": "Perdidas",
+    "legendNone": "Sin datos",
+    "of": "de",
+    "statusTaken": "Tomado",
+    "statusMissed": "Perdido",
+    "emptyDetail": "No hay dosis registradas para este día"
+  },
+  "addMedication": {
+    "forms": {
+      "pill": "Pastilla",
+      "capsule": "Cápsula",
+      "liquid": "Líquido",
+      "injection": "Inyección",
+      "ointment": "Pomada",
+      "drops": "Gotas",
+      "other": "Otro"
+    },
+    "frequency": {
+      "daily": "Diariamente",
+      "dailyDesc": "Todos los días",
+      "specificDays": "Días específicos",
+      "specificDaysDesc": "Elegir días de la semana",
+      "interval": "Intervalo",
+      "intervalDesc": "Cada X horas"
+    },
+    "steps": {
+      "medication": "Medicamento",
+      "schedule": "Horarios",
+      "stock": "Stock",
+      "review": "Revisión"
+    },
+    "step1": {
+      "title": "Información del Medicamento",
+      "subtitle": "Completa los datos básicos de tu medicamento",
+      "nameLabel": "Nombre del Medicamento *",
+      "namePlaceholder": "Ej: Losartán",
+      "dosageLabel": "Dosis *",
+      "dosagePlaceholder": "Ej: 50mg",
+      "formLabel": "Forma Farmacéutica *",
+      "colorLabel": "Color de Identificación",
+      "instructionsLabel": "Instrucciones (opcional)",
+      "instructionsPlaceholder": "Ej: Tomar en ayunas..."
+    },
+    "step2": {
+      "title": "Horarios y Frecuencia",
+      "subtitle": "Establece cuándo debes tomar este medicamento",
+      "freqLabel": "Frecuencia",
+      "daysLabel": "Días de la Semana",
+      "intervalLabel": "Intervalo (horas)",
+      "timesLabel": "Horarios",
+      "addTime": "Añadir"
+    },
+    "step3": {
+      "title": "Control de Stock",
+      "subtitle": "Haz un seguimiento de la cantidad y caducidad",
+      "initialQtyLabel": "Cantidad Inicial",
+      "initialQtyPlaceholder": "Ej: 30",
+      "units": "unidades",
+      "thresholdLabel": "Alerta de Stock Bajo",
+      "thresholdPlaceholder": "Ej: 5",
+      "thresholdHint": "Serás notificado cuando quede esta cantidad",
+      "expiryLabel": "Fecha de Caducidad (opcional)"
+    },
+    "step4": {
+      "title": "Revisión",
+      "subtitle": "Verifica si los datos son correctos",
+      "currentQty": "Cantidad actual",
+      "notifyAt": "Avisar cuando queden",
+      "expiry": "Caducidad"
+    },
+    "actions": {
+      "back": "Volver",
+      "next": "Siguiente paso",
+      "save": "Guardar Medicamento"
+    },
+    "alerts": {
+      "successTitle": "¡Medicamento Guardado! 💊",
+      "successMessage": "{{name}} ({{dosage}}) fue añadido con éxito.",
+      "errorTitle": "Error",
+      "errorMessage": "No se pudo guardar el medicamento."
+    }
+  },
+  "medDetail": {
+    "loading": "Cargando...",
+    "noExpiry": "Sin caducidad",
+    "title": "Detalles",
+    "adherenceTitle": "Adhesión al Tratamiento",
+    "adherenceSubtitle": "Tasa de adhesión de los últimos 30 días",
+    "scheduleTitle": "Programación",
+    "freqLabel": "Frecuencia",
+    "mealLabel": "Comida",
+    "noRelation": "Sin relación",
+    "timesLabel": "Horarios",
+    "stockTitle": "Stock",
+    "qtyLabel": "Cantidad",
+    "units": "unidades",
+    "alertLabel": "Alerta en",
+    "expiryLabel": "Caducidad",
+    "archiveBtn": "Archivar medicamento",
+    "deleteBtn": "Eliminar medicamento",
+    "alerts": {
+      "deleteTitle": "Eliminar Medicamento",
+      "deleteMsg": "¿Realmente deseas eliminar {{name}}? Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "archivedTitle": "Medicamento Archivado",
+      "archivedMsg": "{{name}} fue archivado con éxito.",
+      "error": "Error",
+      "deleteError": "No se pudo eliminar el medicamento.",
+      "archiveError": "No se pudo archivar el medicamento."
+    }
+  },
+  "camera": {
+    "permissionMsg": "Necesitamos acceso a tu cámara para verificar el medicamento.",
+    "permissionBtn": "Permitir Cámara",
+    "guideText": "Muestra el medicamento en tu mano",
+    "analyzingTitle": "Analizando foto...",
+    "analyzingSubtitle": "La IA está verificando si estás tomando tu medicación",
+    "successTitle": "¡Verificado! ✨",
+    "successSubtitle": "Medicación confirmada con éxito",
+    "failedTitle": "No verificado",
+    "failedSubtitle": "No se pudo confirmar la medicación en la foto.\nIntento {{attempts}} de 3",
+    "medicationFallback": "Medicamento",
+    "warningText": "📸 Toma la foto para desactivar la alarma",
+    "successBtn": "Alarma Desactivada — Volver",
+    "retryBtn": "Tomar Nueva Foto",
+    "attemptsLeft": "{{remaining}} intento(s) restante(s)",
+    "alerts": {
+      "error": "Error",
+      "registerError": "No se pudo registrar la dosis.",
+      "captureError": "No se pudo capturar la foto de la medicación.",
+      "manualTitle": "Verificación Manual",
+      "manualMsg": "Después de 3 intentos fallidos, puedes confirmar manualmente. Esto se registrará en el historial.",
+      "manualConfirm": "Confirmar Manualmente",
+      "tryAgain": "Intentar de Nuevo",
+      "alarmActiveTitle": "⚠️ Alarma Activa",
+      "alarmActiveMsg": "La alarma solo se puede desactivar tomando una foto de tu medicación. No puedes cerrar esta pantalla.",
+      "understood": "Entendido"
+    }
+  },
+  "notFound": {
+    "ops": "¡Uy!",
+    "title": "Pantalla no encontrada",
+    "subtitle": "Esta página no existe en Cyber Nurse",
+    "back": "← Volver al inicio"
+  }
+}

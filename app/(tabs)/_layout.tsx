@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const Colors = {
   primary: '#E53935',
@@ -13,6 +14,8 @@ const Colors = {
 };
 
 export default function TabLayout() {
+  const { t } = useTranslation();
+
   return (
     <Tabs
       screenOptions={{
@@ -28,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Hoje',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <MaterialCommunityIcons
@@ -43,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="medications"
         options={{
-          title: 'Medicamentos',
+          title: t('tabs.medications'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <MaterialCommunityIcons
@@ -58,7 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendário',
+          title: t('tabs.calendar'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <MaterialCommunityIcons
@@ -73,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <MaterialCommunityIcons

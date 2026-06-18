@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { getDosesByDateRange } from '../../src/services/medicationService';
+import { useTranslation } from 'react-i18next';
 
 // ── Types ──────────────────────────────────────────────
 type DayStatus = 'all' | 'partial' | 'missed' | 'none';
@@ -105,6 +106,7 @@ function getStatusColor(status: DayStatus): string {
 // ── Component ──────────────────────────────────────────
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const today = new Date();
 
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -222,8 +224,8 @@ export default function CalendarScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Calendário</Text>
-        <Text style={styles.headerSubtitle}>Acompanhe sua adesão</Text>
+        <Text style={styles.headerTitle}>{t('calendar.title')}</Text>
+        <Text style={styles.headerSubtitle}>{t('calendar.subtitle')}</Text>
       </View>
 
       <ScrollView
@@ -235,7 +237,7 @@ export default function CalendarScreen() {
         <View style={styles.adherenceCard}>
           <View style={styles.adherenceRow}>
             <View>
-              <Text style={styles.adherenceLabel}>Adesão Mensal</Text>
+              <Text style={styles.adherenceLabel}>{t('calendar.adherenceMonthly')}</Text>
               <Text style={styles.adherenceMonth}>
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </Text>
@@ -347,10 +349,10 @@ export default function CalendarScreen() {
           {/* Legend */}
           <View style={styles.legend}>
             {([
-              { status: 'all' as DayStatus, label: 'Todas tomadas' },
-              { status: 'partial' as DayStatus, label: 'Parcial' },
-              { status: 'missed' as DayStatus, label: 'Perdidas' },
-              { status: 'none' as DayStatus, label: 'Sem dados' },
+              { status: 'all' as DayStatus, label: t('calendar.legendAll') },
+              { status: 'partial' as DayStatus, label: t('calendar.legendPartial') },
+              { status: 'missed' as DayStatus, label: t('calendar.legendMissed') },
+              { status: 'none' as DayStatus, label: t('calendar.legendNone') },
             ]).map(item => (
               <View key={item.status} style={styles.legendItem}>
                 <View
@@ -375,7 +377,7 @@ export default function CalendarScreen() {
                 color="#E53935"
               />
               <Text style={styles.detailsTitle}>
-                {selectedDay} de {MONTH_NAMES[currentMonth]}
+                {selectedDay} {t('calendar.of')} {MONTH_NAMES[currentMonth]}
               </Text>
             </View>
 
@@ -409,7 +411,7 @@ export default function CalendarScreen() {
                       { color: dose.taken ? '#43A047' : '#D32F2F' },
                     ]}
                   >
-                    {dose.taken ? 'Tomado' : 'Perdido'}
+                    {dose.taken ? t('calendar.statusTaken') : t('calendar.statusMissed')}
                   </Text>
                 </View>
               </View>
@@ -426,7 +428,7 @@ export default function CalendarScreen() {
               color="#BDBDBD"
             />
             <Text style={styles.emptyDetailText}>
-              Nenhuma dose registrada para este dia
+              {t('calendar.emptyDetail')}
             </Text>
           </View>
         )}

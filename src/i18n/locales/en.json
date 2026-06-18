@@ -1,0 +1,265 @@
+{
+  "profile": {
+    "headerTitle": "Profile",
+    "userNameFallback": "User",
+    "stats": {
+      "medications": "Medications",
+      "adherence": "Adherence",
+      "streak": "Streak (days)"
+    },
+    "sections": {
+      "appSettings": {
+        "title": "App Settings",
+        "personalData": "Personal Data",
+        "notifications": "Notifications",
+        "language": "Language",
+        "languagePT": "Portuguese",
+        "languageEN": "English",
+        "languageES": "Spanish"
+      },
+      "health": {
+        "title": "Health",
+        "subtitle": "Manage your health and data",
+        "caregivers": "Caregivers",
+        "reports": "Reports",
+        "export": "Export Data"
+      },
+      "app": {
+        "title": "App",
+        "about": "About Cyber Nurse",
+        "terms": "Terms of Use",
+        "privacy": "Privacy Policy",
+        "version": "Version"
+      },
+      "account": {
+        "title": "Account",
+        "logout": "Log Out"
+      }
+    },
+    "footer": "Cyber Nurse © 2025 by InkluDevs\nMade with ❤️ for your health",
+    "alerts": {
+      "error": "Error",
+      "imagePickError": "Could not select the image."
+    },
+    "languageSelect": {
+      "title": "Select Language",
+      "cancel": "Cancel"
+    }
+  },
+  "personalData": {
+    "headerTitle": "Personal Data",
+    "infoText": "This information helps customize your alarms and health reports. It is saved only on this device.",
+    "accountSection": "Account Data",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "How you want to be called",
+    "basicMeasures": "Basic Measures",
+    "age": "Age",
+    "agePlaceholder": "E.g.: 34",
+    "bloodType": "Blood Type",
+    "bloodTypePlaceholder": "E.g.: O+",
+    "weight": "Weight (kg)",
+    "weightPlaceholder": "E.g.: 70.5",
+    "height": "Height (cm)",
+    "heightPlaceholder": "E.g.: 175",
+    "healthHistory": "Health History",
+    "allergies": "Known Allergies",
+    "allergiesPlaceholder": "E.g.: Penicillin, Peanuts...",
+    "chronicConditions": "Chronic Conditions",
+    "chronicConditionsPlaceholder": "E.g.: Hypertension, Type 2 Diabetes...",
+    "saveButton": "Save Data",
+    "successAlert": {
+      "title": "Saved successfully!",
+      "message": "Your personal data has been updated."
+    }
+  },
+  "tabs": {
+    "home": "Today",
+    "medications": "Medications",
+    "calendar": "Calendar",
+    "profile": "Profile"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "days": "days",
+    "progressTitle": "Daily Progress",
+    "dosesTaken": "of {{total}} medications taken",
+    "nextDose": "Next Dose",
+    "pending": "Pending",
+    "completed": "Completed",
+    "emptyTitle": "No medications today",
+    "emptySubtitle": "Add your medications to start receiving reminders"
+  },
+  "medications": {
+    "title": "Medications",
+    "subtitle": "Manage all your medications",
+    "searchPlaceholder": "Search medication...",
+    "filterAll": "All",
+    "filterActive": "Active",
+    "filterArchived": "Archived",
+    "clearSearch": "Clear search",
+    "countSingular": "medication",
+    "countPlural": "medications",
+    "emptySearchTitle": "No results found",
+    "emptySearchSubtitle": "Try searching with different terms",
+    "emptyArchivedTitle": "No archived medications",
+    "emptyAllTitle": "No registered medications",
+    "emptyAllSubtitle": "Tap the + button to add your first medication",
+    "addButton": "Add Medication"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "Track your adherence",
+    "adherenceMonthly": "Monthly Adherence",
+    "legendAll": "All taken",
+    "legendPartial": "Partial",
+    "legendMissed": "Missed",
+    "legendNone": "No data",
+    "of": "of",
+    "statusTaken": "Taken",
+    "statusMissed": "Missed",
+    "emptyDetail": "No doses recorded for this day"
+  },
+  "addMedication": {
+    "forms": {
+      "pill": "Pill",
+      "capsule": "Capsule",
+      "liquid": "Liquid",
+      "injection": "Injection",
+      "ointment": "Ointment",
+      "drops": "Drops",
+      "other": "Other"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "dailyDesc": "Every day",
+      "specificDays": "Specific days",
+      "specificDaysDesc": "Choose days of the week",
+      "interval": "Interval",
+      "intervalDesc": "Every X hours"
+    },
+    "steps": {
+      "medication": "Medication",
+      "schedule": "Schedule",
+      "stock": "Stock",
+      "review": "Review"
+    },
+    "step1": {
+      "title": "Medication Information",
+      "subtitle": "Fill in the basic data of your medication",
+      "nameLabel": "Medication Name *",
+      "namePlaceholder": "Ex: Losartan",
+      "dosageLabel": "Dosage *",
+      "dosagePlaceholder": "Ex: 50mg",
+      "formLabel": "Pharmaceutical Form *",
+      "colorLabel": "Identification Color",
+      "instructionsLabel": "Instructions (optional)",
+      "instructionsPlaceholder": "Ex: Take on an empty stomach..."
+    },
+    "step2": {
+      "title": "Schedule and Frequency",
+      "subtitle": "Set when you should take this medication",
+      "freqLabel": "Frequency",
+      "daysLabel": "Days of the Week",
+      "intervalLabel": "Interval (hours)",
+      "timesLabel": "Times",
+      "addTime": "Add"
+    },
+    "step3": {
+      "title": "Stock Control",
+      "subtitle": "Track medication quantity and expiry",
+      "initialQtyLabel": "Initial Quantity",
+      "initialQtyPlaceholder": "Ex: 30",
+      "units": "units",
+      "thresholdLabel": "Low Stock Alert",
+      "thresholdPlaceholder": "Ex: 5",
+      "thresholdHint": "You will be notified when this quantity remains",
+      "expiryLabel": "Expiry Date (optional)"
+    },
+    "step4": {
+      "title": "Review",
+      "subtitle": "Check if the data is correct",
+      "currentQty": "Current quantity",
+      "notifyAt": "Notify when remains",
+      "expiry": "Expiry"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next step",
+      "save": "Save Medication"
+    },
+    "alerts": {
+      "successTitle": "Medication Saved! 💊",
+      "successMessage": "{{name}} ({{dosage}}) was successfully added.",
+      "errorTitle": "Error",
+      "errorMessage": "Could not save the medication."
+    }
+  },
+  "medDetail": {
+    "loading": "Loading...",
+    "noExpiry": "No expiry date",
+    "title": "Details",
+    "adherenceTitle": "Treatment Adherence",
+    "adherenceSubtitle": "Adherence rate for the last 30 days",
+    "scheduleTitle": "Schedule",
+    "freqLabel": "Frequency",
+    "mealLabel": "Meal Relation",
+    "noRelation": "No relation",
+    "timesLabel": "Times",
+    "stockTitle": "Stock",
+    "qtyLabel": "Quantity",
+    "units": "units",
+    "alertLabel": "Alert at",
+    "expiryLabel": "Expiry Date",
+    "archiveBtn": "Archive medication",
+    "deleteBtn": "Delete medication",
+    "alerts": {
+      "deleteTitle": "Delete Medication",
+      "deleteMsg": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "archivedTitle": "Medication Archived",
+      "archivedMsg": "{{name}} was successfully archived.",
+      "error": "Error",
+      "deleteError": "Could not delete the medication.",
+      "archiveError": "Could not archive the medication."
+    }
+  },
+  "camera": {
+    "permissionMsg": "We need access to your camera to verify the medication.",
+    "permissionBtn": "Allow Camera",
+    "guideText": "Show the medication in your hand",
+    "analyzingTitle": "Analyzing photo...",
+    "analyzingSubtitle": "The AI is verifying if you are taking your medication",
+    "successTitle": "Verified! ✨",
+    "successSubtitle": "Medication successfully confirmed",
+    "failedTitle": "Not verified",
+    "failedSubtitle": "Could not confirm the medication in the photo.\nAttempt {{attempts}} of 3",
+    "medicationFallback": "Medication",
+    "warningText": "📸 Take the photo to disable the alarm",
+    "successBtn": "Alarm Disabled — Back",
+    "retryBtn": "Take New Photo",
+    "attemptsLeft": "{{remaining}} attempt(s) remaining",
+    "alerts": {
+      "error": "Error",
+      "registerError": "Could not register the dose.",
+      "captureError": "Could not capture the medication photo.",
+      "manualTitle": "Manual Verification",
+      "manualMsg": "After 3 unsuccessful attempts, you can manually confirm. This will be recorded in the history.",
+      "manualConfirm": "Confirm Manually",
+      "tryAgain": "Try Again",
+      "alarmActiveTitle": "⚠️ Active Alarm",
+      "alarmActiveMsg": "The alarm can only be disabled by taking a photo of your medication. You cannot close this screen.",
+      "understood": "Understood"
+    }
+  },
+  "notFound": {
+    "ops": "Oops!",
+    "title": "Screen not found",
+    "subtitle": "This page does not exist in Cyber Nurse",
+    "back": "← Back to home"
+  }
+}

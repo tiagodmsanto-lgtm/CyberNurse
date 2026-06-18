@@ -22,6 +22,7 @@ import { MedicationCard } from '../../src/components/medication/MedicationCard';
 import type { Medication, MedicationForm } from '../../src/models/Medication';
 import { useMedicationStore, useStockStore } from '../../src/stores';
 import { getAllMedications, getAllStock } from '../../src/services/medicationService';
+import { useTranslation } from 'react-i18next';
 
 // ─── Filter types ───────────────────────────────────────
 type FilterType = 'all' | 'active' | 'archived';
@@ -32,15 +33,17 @@ interface FilterChip {
   icon: string;
 }
 
-const FILTERS: FilterChip[] = [
-  { key: 'all', label: 'Todos', icon: 'view-grid-outline' },
-  { key: 'active', label: 'Ativos', icon: 'check-circle-outline' },
-  { key: 'archived', label: 'Arquivados', icon: 'archive-outline' },
+// Labels are now dynamic, so we just store the keys
+const FILTERS: { key: FilterType; labelKey: string; icon: string }[] = [
+  { key: 'all', labelKey: 'medications.filterAll', icon: 'view-grid-outline' },
+  { key: 'active', labelKey: 'medications.filterActive', icon: 'check-circle-outline' },
+  { key: 'archived', labelKey: 'medications.filterArchived', icon: 'archive-outline' },
 ];
 
 // ─── Component ──────────────────────────────────────────
 export default function MedicationsScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -183,15 +186,15 @@ export default function MedicationsScreen() {
       </View>
       <Text style={styles.emptyTitle}>
         {search.trim()
-          ? 'Nenhum resultado encontrado'
+          ? t('medications.emptySearchTitle')
           : activeFilter === 'archived'
-          ? 'Nenhum medicamento arquivado'
-          : 'Nenhum medicamento cadastrado'}
+          ? t('medications.emptyArchivedTitle')
+          : t('medications.emptyAllTitle')}
       </Text>
       <Text style={styles.emptySubtitle}>
         {search.trim()
-          ? 'Tente buscar com outros termos'
-          : 'Toque no botão + para adicionar seu primeiro medicamento'}
+          ? t('medications.emptySearchSubtitle')
+          : t('medications.emptyAllSubtitle')}
       </Text>
       {!search.trim() && activeFilter === 'all' && (
         <TouchableOpacity
@@ -200,7 +203,7 @@ export default function MedicationsScreen() {
           activeOpacity={0.8}
         >
           <MaterialCommunityIcons name="plus" size={20} color={Colors.white} />
-          <Text style={styles.emptyButtonText}>Adicionar Medicamento</Text>
+          <Text style={styles.emptyButtonText}>{t('medications.addButton')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -235,7 +238,7 @@ export default function MedicationsScreen() {
                   isActive && styles.filterChipTextActive,
                 ]}
               >
-                {filter.label}
+                {t(filter.labelKey)}
               </Text>
               <View
                 style={[
@@ -262,12 +265,12 @@ export default function MedicationsScreen() {
         <Text style={styles.resultsText}>
           {filteredMedications.length}{' '}
           {filteredMedications.length === 1
-            ? 'medicamento'
-            : 'medicamentos'}
+            ? t('medications.countSingular')
+            : t('medications.countPlural')}
         </Text>
         {search.trim() !== '' && (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Text style={styles.clearSearchText}>Limpar busca</Text>
+            <Text style={styles.clearSearchText}>{t('medications.clearSearch')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -282,9 +285,9 @@ export default function MedicationsScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerTop}>
               <View>
-                <Text style={styles.headerTitle}>Medicamentos</Text>
+                <Text style={styles.headerTitle}>{t('medications.title')}</Text>
                 <Text style={styles.headerSubtitle}>
-                  Gerencie todos os seus medicamentos
+                  {t('medications.subtitle')}
                 </Text>
               </View>
               <View style={styles.headerBadge}>
@@ -306,7 +309,7 @@ export default function MedicationsScreen() {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Buscar medicamento..."
+                placeholder={t('medications.searchPlaceholder')}
                 placeholderTextColor={Colors.textSecondary}
                 value={search}
                 onChangeText={setSearch}

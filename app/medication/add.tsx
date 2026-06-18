@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { createMedication, generateDosesForDay, searchMedications, searchAlimentos } from '../../src/services/medicationService';
 import { getDatabase, generateId } from '../../src/services/database';
@@ -71,33 +72,33 @@ interface FrequencyOption {
 }
 
 // ─── Constants ──────────────────────────────────────────
-const FORM_OPTIONS: FormItem[] = [
-  { key: 'comprimido', label: 'Comprimido', icon: 'pill' },
-  { key: 'capsula', label: 'Cápsula', icon: 'pill' },
-  { key: 'liquido', label: 'Líquido', icon: 'bottle-tonic' },
-  { key: 'injecao', label: 'Injeção', icon: 'needle' },
-  { key: 'pomada', label: 'Pomada', icon: 'medical-bag' },
-  { key: 'gotas', label: 'Gotas', icon: 'eyedropper' },
-  { key: 'outro', label: 'Outro', icon: 'medical-bag' },
+const getFormOptions = (t: any): FormItem[] => [
+  { key: 'comprimido', label: t('addMedication.forms.pill'), icon: 'pill' },
+  { key: 'capsula', label: t('addMedication.forms.capsule'), icon: 'pill' },
+  { key: 'liquido', label: t('addMedication.forms.liquid'), icon: 'bottle-tonic' },
+  { key: 'injecao', label: t('addMedication.forms.injection'), icon: 'needle' },
+  { key: 'pomada', label: t('addMedication.forms.ointment'), icon: 'medical-bag' },
+  { key: 'gotas', label: t('addMedication.forms.drops'), icon: 'eyedropper' },
+  { key: 'outro', label: t('addMedication.forms.other'), icon: 'medical-bag' },
 ];
 
-const FREQUENCY_OPTIONS: FrequencyOption[] = [
+const getFrequencyOptions = (t: any): FrequencyOption[] => [
   {
     key: 'daily',
-    label: 'Diariamente',
-    description: 'Todos os dias',
+    label: t('addMedication.frequency.daily'),
+    description: t('addMedication.frequency.dailyDesc'),
     icon: 'calendar-today',
   },
   {
     key: 'specific_days',
-    label: 'Dias específicos',
-    description: 'Escolher dias da semana',
+    label: t('addMedication.frequency.specificDays'),
+    description: t('addMedication.frequency.specificDaysDesc'),
     icon: 'calendar-week',
   },
   {
     key: 'interval',
-    label: 'Intervalo',
-    description: 'A cada X horas',
+    label: t('addMedication.frequency.interval'),
+    description: t('addMedication.frequency.intervalDesc'),
     icon: 'clock-fast',
   },
 ];
@@ -113,6 +114,7 @@ const COLOR_PRESETS = [
 
 // ─── Component ──────────────────────────────────────────
 export default function AddMedicationScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const stepAnim = useRef(new Animated.Value(0)).current;
@@ -330,8 +332,8 @@ export default function AddMedicationScreen() {
         window.alert(`Medicamento Salvo!\n${name} (${dosage}) foi adicionado com sucesso.`);
       } else {
         Alert.alert(
-          'Medicamento Salvo! 💊',
-          `${name} (${dosage}) foi adicionado com sucesso.`,
+          t('addMedication.alerts.successTitle'),
+          t('addMedication.alerts.successMessage', { name, dosage }),
           [{ text: 'OK' }]
         );
       }
@@ -340,7 +342,7 @@ export default function AddMedicationScreen() {
       router.replace('/medications');
     } catch (error) {
       console.error('Failed to save medication:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o medicamento.');
+      Alert.alert(t('addMedication.alerts.errorTitle'), t('addMedication.alerts.errorMessage'));
     }
   }, [
     name,
@@ -359,27 +361,27 @@ export default function AddMedicationScreen() {
 
   // ─── Get the form label ───────────────────────────────
   const getFormLabel = (key: MedicationFormType): string =>
-    FORM_OPTIONS.find((f) => f.key === key)?.label || 'Outro';
+    getFormOptions(t).find((f) => f.key === key)?.label || 'Outro';
 
   const getFormIcon = (key: MedicationFormType): string =>
-    FORM_OPTIONS.find((f) => f.key === key)?.icon || 'medical-bag';
+    getFormOptions(t).find((f) => f.key === key)?.icon || 'medical-bag';
 
   const getFreqLabel = (key: FrequencyType): string =>
-    FREQUENCY_OPTIONS.find((f) => f.key === key)?.label || '';
+    getFrequencyOptions(t).find((f) => f.key === key)?.label || '';
 
   // ═════════════════════════════════════════════════════
   // STEP 1: Name + Dosage + Form
   // ═════════════════════════════════════════════════════
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Informações do Medicamento</Text>
+      <Text style={styles.stepTitle}>{t('addMedication.step1.title')}</Text>
       <Text style={styles.stepDescription}>
-        Preencha os dados básicos do seu medicamento
+        {t('addMedication.step1.subtitle')}
       </Text>
 
       {/* Name Input */}
       <View style={[styles.inputGroup, { zIndex: 10 }]}>
-        <Text style={styles.inputLabel}>Nome do Medicamento *</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.nameLabel')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="pill"
@@ -389,7 +391,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder="Ex: Losartana"
+            placeholder=t('addMedication.step1.namePlaceholder')
             placeholderTextColor={C.textSecondary}
             value={name}
             onChangeText={handleNameChange}
@@ -424,7 +426,7 @@ export default function AddMedicationScreen() {
 
       {/* Dosage Input */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Dosagem *</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.dosageLabel')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="scale-balance"
@@ -434,7 +436,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder="Ex: 50mg"
+            placeholder=t('addMedication.step1.dosagePlaceholder')
             placeholderTextColor={C.textSecondary}
             value={dosage}
             onChangeText={setDosage}
@@ -445,9 +447,9 @@ export default function AddMedicationScreen() {
 
       {/* Form Selection */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Forma Farmacêutica *</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.formLabel')}</Text>
         <View style={styles.formGrid}>
-          {FORM_OPTIONS.map((form) => {
+          {getFormOptions(t).map((form) => {
             const isSelected = selectedForm === form.key;
             return (
               <TouchableOpacity
@@ -488,7 +490,7 @@ export default function AddMedicationScreen() {
 
       {/* Color Selection */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Cor de Identificação</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.colorLabel')}</Text>
         <View style={styles.colorRow}>
           {COLOR_PRESETS.map((color) => (
             <TouchableOpacity
@@ -515,11 +517,11 @@ export default function AddMedicationScreen() {
 
       {/* Instructions */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Instruções (opcional)</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.instructionsLabel')}</Text>
         <View style={[styles.inputWrapper, styles.inputWrapperMultiline]}>
           <TextInput
             style={[styles.textInput, styles.textInputMultiline]}
-            placeholder="Ex: Tomar em jejum, 30 min antes do café..."
+            placeholder=t('addMedication.step1.instructionsPlaceholder')
             placeholderTextColor={C.textSecondary}
             value={instructions}
             onChangeText={setInstructions}
@@ -537,15 +539,15 @@ export default function AddMedicationScreen() {
   // ═════════════════════════════════════════════════════
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Horários e Frequência</Text>
+      <Text style={styles.stepTitle}>{t('addMedication.step2.title')}</Text>
       <Text style={styles.stepDescription}>
-        Defina quando você deve tomar este medicamento
+        {t('addMedication.step2.subtitle')}
       </Text>
 
       {/* Frequency Type */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Frequência</Text>
-        {FREQUENCY_OPTIONS.map((option) => {
+        <Text style={styles.inputLabel}>{t('addMedication.step2.freqLabel')}</Text>
+        {getFrequencyOptions(t).map((option) => {
           const isSelected = frequencyType === option.key;
           return (
             <TouchableOpacity
@@ -598,7 +600,7 @@ export default function AddMedicationScreen() {
       {/* Specific Days */}
       {frequencyType === 'specific_days' && (
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Dias da Semana</Text>
+          <Text style={styles.inputLabel}>{t('addMedication.step2.daysLabel')}</Text>
           <View style={styles.weekdayRow}>
             {WEEKDAY_LABELS.map((label, index) => {
               const isSelected = selectedDays.includes(index);
@@ -630,7 +632,7 @@ export default function AddMedicationScreen() {
       {/* Interval Hours */}
       {frequencyType === 'interval' && (
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Intervalo (horas)</Text>
+          <Text style={styles.inputLabel}>{t('addMedication.step2.intervalLabel')}</Text>
           <View style={styles.intervalRow}>
             {['4', '6', '8', '12'].map((h) => {
               const isSelected = intervalHours === h;
@@ -662,14 +664,14 @@ export default function AddMedicationScreen() {
       {/* Times */}
       <View style={styles.inputGroup}>
         <View style={styles.timesHeader}>
-          <Text style={styles.inputLabel}>Horários</Text>
+          <Text style={styles.inputLabel}>{t('addMedication.step2.timesLabel')}</Text>
           <TouchableOpacity
             style={styles.addTimeButton}
             onPress={addTime}
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="plus" size={18} color={C.primary} />
-            <Text style={styles.addTimeText}>Adicionar</Text>
+            <Text style={styles.addTimeText}>{t('addMedication.step2.addTime')}</Text>
           </TouchableOpacity>
         </View>
         {times.map((time, index) => (
@@ -715,9 +717,9 @@ export default function AddMedicationScreen() {
   // ═════════════════════════════════════════════════════
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Controle de Estoque</Text>
+      <Text style={styles.stepTitle}>{t('addMedication.step3.title')}</Text>
       <Text style={styles.stepDescription}>
-        Acompanhe a quantidade e validade do medicamento
+        {t('addMedication.step3.subtitle')}
       </Text>
 
       {/* Decorative stock icon */}
@@ -733,7 +735,7 @@ export default function AddMedicationScreen() {
 
       {/* Initial Quantity */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Quantidade Inicial</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step3.initialQtyLabel')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="counter"
@@ -743,20 +745,20 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder="Ex: 30"
+            placeholder=t('addMedication.step3.initialQtyPlaceholder')
             placeholderTextColor={C.textSecondary}
             value={initialQuantity}
             onChangeText={setInitialQuantity}
             keyboardType="number-pad"
             returnKeyType="next"
           />
-          <Text style={styles.inputSuffix}>unidades</Text>
+          <Text style={styles.inputSuffix}>{t('addMedication.step3.units')}</Text>
         </View>
       </View>
 
       {/* Minimum Threshold */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Alerta de Estoque Baixo</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step3.thresholdLabel')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="alert-outline"
@@ -766,23 +768,23 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder="Ex: 5"
+            placeholder=t('addMedication.step3.thresholdPlaceholder')
             placeholderTextColor={C.textSecondary}
             value={minThreshold}
             onChangeText={setMinThreshold}
             keyboardType="number-pad"
             returnKeyType="next"
           />
-          <Text style={styles.inputSuffix}>unidades</Text>
+          <Text style={styles.inputSuffix}>{t('addMedication.step3.units')}</Text>
         </View>
         <Text style={styles.inputHint}>
-          Você será notificado quando restar essa quantidade
+          {t('addMedication.step3.thresholdHint')}
         </Text>
       </View>
 
       {/* Expiry Date */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Data de Validade (opcional)</Text>
+        <Text style={styles.inputLabel}>{t('addMedication.step3.expiryLabel')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="calendar-clock"
@@ -897,7 +899,7 @@ export default function AddMedicationScreen() {
         {expiryDate ? (
           <ReviewRow
             icon="calendar-remove"
-            label="Validade"
+            label="{t('addMedication.step4.expiry')}"
             value={expiryDate}
           />
         ) : null}
@@ -1067,7 +1069,7 @@ export default function AddMedicationScreen() {
               size={20}
               color={C.primary}
             />
-            <Text style={styles.secondaryButtonText}>Voltar</Text>
+            <Text style={styles.secondaryButtonText}>{t('addMedication.actions.back')}</Text>
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }} />
@@ -1081,7 +1083,7 @@ export default function AddMedicationScreen() {
           disabled={!isStepValid()}
         >
           <Text style={styles.primaryButtonText}>
-            {currentStep === 3 ? 'Salvar Medicamento' : 'Próximo'}
+            {currentStep === 3 ? '{t('addMedication.actions.save')}' : 'Próximo'}
           </Text>
           <MaterialCommunityIcons
             name={currentStep === 3 ? 'check' : 'arrow-right'}

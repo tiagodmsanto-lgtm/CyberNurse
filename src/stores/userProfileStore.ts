@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface UserProfileData {
+  name: string;
   age: string;
   weight: string;
   height: string;
@@ -18,6 +19,7 @@ interface UserProfileState {
 }
 
 const defaultData: UserProfileData = {
+  name: '',
   age: '',
   weight: '',
   height: '',

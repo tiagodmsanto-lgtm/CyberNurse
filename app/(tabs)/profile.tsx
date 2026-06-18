@@ -6,12 +6,19 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
+
 import { getAllMedications } from '../../src/services/medicationService';
 import { getDatabase } from '../../src/services/database';
+import { useUserProfileStore } from '../../src/stores/userProfileStore';
 
 // ── Types ──────────────────────────────────────────────
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -21,11 +28,8 @@ interface SettingsItem {
   title: string;
   subtitle?: string;
   onPress?: () => void;
-  /** Renders the right side content instead of the default chevron */
   trailing?: React.ReactNode;
-  /** Text/icon color override */
   color?: string;
-  /** If true, skip the chevron */
   noChevron?: boolean;
 }
 
@@ -35,63 +39,63 @@ interface SettingsSection {
   items: SettingsItem[];
 }
 
-// ── Data ───────────────────────────────────────────────
-const SETTINGS_SECTIONS: SettingsSection[] = [
-  {
-    title: 'Conta',
-    items: [
-      { icon: 'account-outline', title: 'Dados pessoais', onPress: () => router.push('/profile/personal-data') },
-      { icon: 'bell-outline', title: 'Notificações' },
-      { icon: 'translate', title: 'Idioma', trailing: (
-        <Text style={{ fontSize: 14, color: '#757575', marginRight: 4 }}>
-          Português
-        </Text>
-      )},
-    ],
-  },
-  {
-    title: 'Saúde',
-    subtitle: 'Gerencie sua saúde e dados',
-    items: [
-      { icon: 'account-group-outline', title: 'Cuidadores' },
-      { icon: 'chart-line', title: 'Relatórios' },
-      { icon: 'download-outline', title: 'Exportar dados' },
-    ],
-  },
-  {
-    title: 'App',
-    items: [
-      { icon: 'information-outline', title: 'Sobre o Cyber Nurse' },
-      { icon: 'file-document-outline', title: 'Termos de uso' },
-      { icon: 'shield-check-outline', title: 'Política de privacidade' },
-      {
-        icon: 'cellphone',
-        title: 'Versão',
-        trailing: (
-          <Text style={{ fontSize: 14, color: '#757575' }}>1.0.0</Text>
-        ),
-        noChevron: true,
-      },
-    ],
-  },
-  {
-    title: 'Conta',
-    items: [
-      {
-        icon: 'logout',
-        title: 'Sair',
-        color: '#D32F2F',
-        noChevron: true,
-      },
-    ],
-  },
-];
-
 // ── Component ──────────────────────────────────────────
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const userName = useUserProfileStore((state) => state.data.name) || t('profile.userNameFallback');
+  
   const [activeMedsCount, setActiveMedsCount] = useState(0);
   const [adherenceRate, setAdherenceRate] = useState(87);
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  
+  // ── Data ───────────────────────────────────────────────
+  const SETTINGS_SECTIONS: SettingsSection[] = [
+    {
+      title: t('profile.sections.appSettings.title'),
+      items: [
+        { icon: 'account-outline', title: t('profile.sections.appSettings.personalData'), onPress: () => router.push('/profile/personal-data') },
+        { icon: 'bell-outline', title: t('profile.sections.appSettings.notifications') },
+
+      ],
+    },
+    {
+      title: t('profile.sections.health.title'),
+      subtitle: t('profile.sections.health.subtitle'),
+      items: [
+        { icon: 'account-group-outline', title: t('profile.sections.health.caregivers') },
+        { icon: 'chart-line', title: t('profile.sections.health.reports') },
+        { icon: 'download-outline', title: t('profile.sections.health.export') },
+      ],
+    },
+    {
+      title: t('profile.sections.app.title'),
+      items: [
+        { icon: 'information-outline', title: t('profile.sections.app.about') },
+        { icon: 'file-document-outline', title: t('profile.sections.app.terms') },
+        { icon: 'shield-check-outline', title: t('profile.sections.app.privacy') },
+        {
+          icon: 'cellphone',
+          title: t('profile.sections.app.version'),
+          trailing: (
+            <Text style={{ fontSize: 14, color: '#757575' }}>1.0.0</Text>
+          ),
+          noChevron: true,
+        },
+      ],
+    },
+    {
+      title: t('profile.sections.account.title'),
+      items: [
+        {
+          icon: 'logout',
+          title: t('profile.sections.account.logout'),
+          color: '#D32F2F',
+          noChevron: true,
+        },
+      ],
+    },
+  ];
 
   useFocusEffect(
     useCallback(() => {
@@ -110,14 +114,44 @@ export default function ProfileScreen() {
       } catch (e) {
         console.error('Failed to load stats for profile:', e);
       }
+      
+      const loadProfileImage = async () => {
+        try {
+          const uri = await AsyncStorage.getItem('profileImageUri');
+          if (uri) setProfileImageUri(uri);
+        } catch (e) {
+          console.error('Failed to load profile image:', e);
+        }
+      };
+      loadProfileImage();
     }, [])
   );
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setProfileImageUri(uri);
+        await AsyncStorage.setItem('profileImageUri', uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert(t('profile.alerts.error'), t('profile.alerts.imagePickError'));
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <Text style={styles.headerTitle}>{t('profile.headerTitle')}</Text>
       </View>
 
       <ScrollView
@@ -129,14 +163,18 @@ export default function ProfileScreen() {
         <View style={styles.avatarCard}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarPlaceholder}>
-              <MaterialCommunityIcons
-                name="account"
-                size={48}
-                color="#FFFFFF"
-              />
+              {profileImageUri ? (
+                <Image source={{ uri: profileImageUri }} style={{ width: 88, height: 88, borderRadius: 44 }} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="account"
+                  size={48}
+                  color="#FFFFFF"
+                />
+              )}
             </View>
             {/* Camera overlay button */}
-            <TouchableOpacity style={styles.cameraButton} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.cameraButton} activeOpacity={0.7} onPress={handlePickImage}>
               <MaterialCommunityIcons
                 name="camera"
                 size={16}
@@ -144,24 +182,24 @@ export default function ProfileScreen() {
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Tiago Silva</Text>
+          <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.userEmail}>tiago.silva@email.com</Text>
 
           {/* Quick stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{activeMedsCount}</Text>
-              <Text style={styles.statLabel}>Medicamentos</Text>
+              <Text style={styles.statLabel}>{t('profile.stats.medications')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{adherenceRate}%</Text>
-              <Text style={styles.statLabel}>Adesão</Text>
+              <Text style={styles.statLabel}>{t('profile.stats.adherence')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>7</Text>
-              <Text style={styles.statLabel}>Dias seguidos</Text>
+              <Text style={styles.statLabel}>{t('profile.stats.streak')}</Text>
             </View>
           </View>
         </View>
@@ -237,12 +275,14 @@ export default function ProfileScreen() {
 
         {/* Footer */}
         <Text style={styles.footerText}>
-          Cyber Nurse © 2025 by InkluDevs{'\n'}
-          Feito com ❤️ para sua saúde
+          {t('profile.footer')}
         </Text>
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+
+
     </View>
   );
 }
@@ -429,5 +469,55 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
+  },
+  
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    width: '100%',
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#212121',
+    marginBottom: 20,
+  },
+  modalButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F0F0',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#E53935',
+  },
+  modalCancelButton: {
+    width: '100%',
+    paddingVertical: 14,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#757575',
   },
 });

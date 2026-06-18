@@ -18,12 +18,13 @@ import { useDoseStore } from '../../src/stores';
 import { generateDosesForDay, getDosesByDateRange, DoseWithMedication } from '../../src/services/medicationService';
 import { getDayBounds } from '../../src/utils/dateUtils';
 import { MEDICATION_FORM_ICONS, MedicationForm } from '../../src/models/Medication';
+import { useTranslation } from 'react-i18next';
 
-function getGreeting(): string {
+function getGreeting(t: any): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Bom dia';
-  if (hour < 18) return 'Boa tarde';
-  return 'Boa noite';
+  if (hour < 12) return t('home.greeting.morning');
+  if (hour < 18) return t('home.greeting.afternoon');
+  return t('home.greeting.evening');
 }
 
 function formatDate(): string {
@@ -33,7 +34,7 @@ function formatDate(): string {
     day: 'numeric',
     month: 'long',
   };
-  return now.toLocaleDateString('pt-BR', options);
+  return now.toLocaleDateString(undefined, options);
 }
 
 const formatDoseTime = (scheduledAt: number) => {
@@ -45,6 +46,7 @@ const formatDoseTime = (scheduledAt: number) => {
 
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const doses = useDoseStore((state) => state.todayDoses) as DoseWithMedication[];
 
@@ -94,19 +96,19 @@ export default function TodayScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerTop}>
               <View>
-                <Text style={styles.greeting}>{getGreeting()} 👋</Text>
+                <Text style={styles.greeting}>{getGreeting(t)} 👋</Text>
                 <Text style={styles.dateText}>{formatDate()}</Text>
               </View>
               <View style={styles.streakBadge}>
                 <MaterialCommunityIcons name="fire" size={18} color="#FF6F61" />
-                <Text style={styles.streakText}>7 dias</Text>
+                <Text style={styles.streakText}>7 {t('home.days')}</Text>
               </View>
             </View>
 
             {/* Progress Card */}
             <View style={styles.progressCard}>
               <View style={styles.progressHeader}>
-                <Text style={styles.progressTitle}>Progresso do Dia</Text>
+                <Text style={styles.progressTitle}>{t('home.progressTitle')}</Text>
                 <Text style={styles.progressPercent}>
                   {Math.round(progressPercent)}%
                 </Text>
@@ -120,7 +122,7 @@ export default function TodayScreen() {
                 />
               </View>
               <Text style={styles.progressSubtext}>
-                {takenCount} de {totalCount} medicamentos tomados
+                {takenCount} {t('home.dosesTaken', { total: totalCount })}
               </Text>
             </View>
           </View>
@@ -150,7 +152,7 @@ export default function TodayScreen() {
                 size={20}
                 color={Colors.primary}
               />
-              <Text style={styles.sectionTitle}>Próxima Dose</Text>
+              <Text style={styles.sectionTitle}>{t('home.nextDose')}</Text>
             </View>
             <DoseCard
               medicationName={nextDose.medicationName}
@@ -180,7 +182,7 @@ export default function TodayScreen() {
                 color={Colors.warning}
               />
               <Text style={styles.sectionTitle}>
-                Pendentes ({pendingDoses.length - 1})
+                {t('home.pending')} ({pendingDoses.length - 1})
               </Text>
             </View>
             {pendingDoses.slice(1).map((dose) => (
@@ -214,7 +216,7 @@ export default function TodayScreen() {
                 color={Colors.success}
               />
               <Text style={styles.sectionTitle}>
-                Concluídos ({completedDoses.length})
+                {t('home.completed')} ({completedDoses.length})
               </Text>
             </View>
             {completedDoses.map((dose) => (
@@ -240,9 +242,9 @@ export default function TodayScreen() {
               size={64}
               color={Colors.secondary}
             />
-            <Text style={styles.emptyTitle}>Nenhum medicamento hoje</Text>
+            <Text style={styles.emptyTitle}>{t('home.emptyTitle')}</Text>
             <Text style={styles.emptySubtitle}>
-              Adicione seus medicamentos para começar a receber lembretes
+              {t('home.emptySubtitle')}
             </Text>
           </View>
         )}

@@ -9,6 +9,7 @@ import { PaperTheme } from '../src/theme';
 import { initDatabase } from '../src/services/database';
 import { logScreenView } from '../src/services/analytics';
 import { logCrashMessage } from '../src/services/crashlytics';
+import '../src/i18n';
 
 export {
   // Catch any errors thrown by the Layout component.

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useUserProfileStore } from '../../src/stores/userProfileStore';
 
 // ── Colors ──────────────────────────────────────────────
@@ -30,10 +31,12 @@ const C = {
 // ── Component ──────────────────────────────────────────
 export default function PersonalDataScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const storeData = useUserProfileStore((state) => state.data);
   const setPersonalData = useUserProfileStore((state) => state.setPersonalData);
 
   // Local state for the form
+  const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
@@ -43,6 +46,7 @@ export default function PersonalDataScreen() {
 
   // Hydrate local state on mount
   useEffect(() => {
+    setName(storeData.name || '');
     setAge(storeData.age || '');
     setWeight(storeData.weight || '');
     setHeight(storeData.height || '');
@@ -53,6 +57,7 @@ export default function PersonalDataScreen() {
 
   const handleSave = () => {
     setPersonalData({
+      name,
       age,
       weight,
       height,
@@ -62,8 +67,8 @@ export default function PersonalDataScreen() {
     });
     
     Alert.alert(
-      'Salvo com sucesso!',
-      'Seus dados pessoais foram atualizados.',
+      t('personalData.successAlert.title'),
+      t('personalData.successAlert.message'),
       [{ text: 'OK', onPress: () => router.back() }]
     );
   };
@@ -81,7 +86,7 @@ export default function PersonalDataScreen() {
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color={C.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Dados Pessoais</Text>
+        <Text style={styles.headerTitle}>{t('personalData.headerTitle')}</Text>
         <View style={{ width: 24 }} /> {/* Balance for centering */}
       </View>
 
@@ -93,22 +98,39 @@ export default function PersonalDataScreen() {
         <View style={styles.infoCard}>
           <MaterialCommunityIcons name="information-outline" size={24} color={C.primary} />
           <Text style={styles.infoText}>
-            Estas informações ajudam a personalizar seus alarmes e relatórios de saúde. Elas são salvas apenas neste dispositivo.
+            {t('personalData.infoText')}
           </Text>
         </View>
 
         {/* Form Group */}
         <View style={styles.formGroup}>
-          <Text style={styles.sectionTitle}>Medidas Básicas</Text>
+          <Text style={styles.sectionTitle}>{t('personalData.accountSection')}</Text>
+          <View style={styles.inputContainerFull}>
+            <Text style={styles.inputLabel}>{t('personalData.displayName')}</Text>
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons name="account-outline" size={20} color={C.textSecondary} />
+              <TextInput
+                style={styles.textInput}
+                placeholder={t('personalData.displayNamePlaceholder')}
+                value={name}
+                onChangeText={setName}
+                placeholderTextColor="#BDBDBD"
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.sectionTitle}>{t('personalData.basicMeasures')}</Text>
           
           <View style={styles.inputRow}>
             <View style={styles.inputContainerHalf}>
-              <Text style={styles.inputLabel}>Idade</Text>
+              <Text style={styles.inputLabel}>{t('personalData.age')}</Text>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="calendar-account" size={20} color={C.textSecondary} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ex: 34"
+                  placeholder={t('personalData.agePlaceholder')}
                   value={age}
                   onChangeText={setAge}
                   keyboardType="number-pad"
@@ -118,12 +140,12 @@ export default function PersonalDataScreen() {
             </View>
             
             <View style={styles.inputContainerHalf}>
-              <Text style={styles.inputLabel}>Tipo Sanguíneo</Text>
+              <Text style={styles.inputLabel}>{t('personalData.bloodType')}</Text>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="water-outline" size={20} color={C.textSecondary} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ex: O+"
+                  placeholder={t('personalData.bloodTypePlaceholder')}
                   value={bloodType}
                   onChangeText={setBloodType}
                   placeholderTextColor="#BDBDBD"
@@ -134,12 +156,12 @@ export default function PersonalDataScreen() {
 
           <View style={styles.inputRow}>
             <View style={styles.inputContainerHalf}>
-              <Text style={styles.inputLabel}>Peso (kg)</Text>
+              <Text style={styles.inputLabel}>{t('personalData.weight')}</Text>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="weight-kilogram" size={20} color={C.textSecondary} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ex: 70.5"
+                  placeholder={t('personalData.weightPlaceholder')}
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="decimal-pad"
@@ -149,12 +171,12 @@ export default function PersonalDataScreen() {
             </View>
 
             <View style={styles.inputContainerHalf}>
-              <Text style={styles.inputLabel}>Altura (cm)</Text>
+              <Text style={styles.inputLabel}>{t('personalData.height')}</Text>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="human-male-height" size={20} color={C.textSecondary} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ex: 175"
+                  placeholder={t('personalData.heightPlaceholder')}
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="number-pad"
@@ -166,15 +188,15 @@ export default function PersonalDataScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.sectionTitle}>Histórico de Saúde</Text>
+          <Text style={styles.sectionTitle}>{t('personalData.healthHistory')}</Text>
 
           <View style={styles.inputContainerFull}>
-            <Text style={styles.inputLabel}>Alergias conhecidas</Text>
+            <Text style={styles.inputLabel}>{t('personalData.allergies')}</Text>
             <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
               <MaterialCommunityIcons name="alert-circle-outline" size={20} color={C.textSecondary} style={styles.textAreaIcon} />
               <TextInput
                 style={styles.textArea}
-                placeholder="Ex: Dipirona, Amendoim..."
+                placeholder={t('personalData.allergiesPlaceholder')}
                 value={allergies}
                 onChangeText={setAllergies}
                 multiline
@@ -185,12 +207,12 @@ export default function PersonalDataScreen() {
           </View>
 
           <View style={styles.inputContainerFull}>
-            <Text style={styles.inputLabel}>Condições Crônicas</Text>
+            <Text style={styles.inputLabel}>{t('personalData.chronicConditions')}</Text>
             <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
               <MaterialCommunityIcons name="heart-pulse" size={20} color={C.textSecondary} style={styles.textAreaIcon} />
               <TextInput
                 style={styles.textArea}
-                placeholder="Ex: Hipertensão, Diabetes tipo 2..."
+                placeholder={t('personalData.chronicConditionsPlaceholder')}
                 value={chronicConditions}
                 onChangeText={setChronicConditions}
                 multiline
@@ -206,7 +228,7 @@ export default function PersonalDataScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
           <MaterialCommunityIcons name="content-save-outline" size={24} color={C.white} />
-          <Text style={styles.saveButtonText}>Salvar Dados</Text>
+          <Text style={styles.saveButtonText}>{t('personalData.saveButton')}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

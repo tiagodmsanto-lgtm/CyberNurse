@@ -80,7 +80,8 @@
           "calendarPermission": "Cyber Nurse precisa acessar seu calendário para sincronizar lembretes de medicamentos."
         }
       ],
-      "@react-native-firebase/analytics"
+      "@react-native-firebase/analytics",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

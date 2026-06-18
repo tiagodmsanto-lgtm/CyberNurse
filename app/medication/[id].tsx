@@ -21,6 +21,7 @@ import { useMedicationStore } from '../../src/stores';
 import { MEDICATION_FORM_ICONS, MEDICATION_FORM_LABELS, MedicationForm } from '../../src/models/Medication';
 import { FREQUENCY_TYPE_LABELS, MEAL_RELATION_LABELS, FrequencyType, MealRelation } from '../../src/models/Schedule';
 import { formatShortDate } from '../../src/utils/dateUtils';
+import { useTranslation } from 'react-i18next';
 
 const C = {
   primary: '#E53935',
@@ -51,6 +52,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 export default function MedicationDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -93,12 +95,12 @@ export default function MedicationDetailScreen() {
   const handleDelete = () => {
     if (!medication) return;
     Alert.alert(
-      'Excluir Medicamento',
-      `Deseja realmente excluir ${medication.name}? Esta ação não pode ser desfeita.`,
+      t('medDetail.alerts.deleteTitle'),
+      t('medDetail.alerts.deleteMsg', { name: medication.name }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('medDetail.alerts.cancel'), style: 'cancel' },
         {
-          text: 'Excluir',
+          text: t('medDetail.alerts.delete'),
           style: 'destructive',
           onPress: () => {
             try {
@@ -107,7 +109,7 @@ export default function MedicationDetailScreen() {
               router.back();
             } catch (e) {
               console.error('Failed to delete medication:', e);
-              Alert.alert('Erro', 'Não foi possível excluir o medicamento.');
+              Alert.alert(t('medDetail.alerts.error'), t('medDetail.alerts.deleteError'));
             }
           },
         },
@@ -121,20 +123,20 @@ export default function MedicationDetailScreen() {
       archiveMedication(medication.id);
       useMedicationStore.getState().updateMedication(medication.id, { isActive: false });
       Alert.alert(
-        'Medicamento Arquivado',
-        `${medication.name} foi arquivado com sucesso.`,
+        t('medDetail.alerts.archivedTitle'),
+        t('medDetail.alerts.archivedMsg', { name: medication.name }),
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (e) {
       console.error('Failed to archive medication:', e);
-      Alert.alert('Erro', 'Não foi possível arquivar o medicamento.');
+      Alert.alert(t('medDetail.alerts.error'), t('medDetail.alerts.archiveError'));
     }
   };
 
   if (!medication) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: C.textSecondary }}>Carregando...</Text>
+        <Text style={{ color: C.textSecondary }}>{t('medDetail.loading')}</Text>
       </View>
     );
   }
@@ -143,7 +145,7 @@ export default function MedicationDetailScreen() {
   const formLabel = MEDICATION_FORM_LABELS[medication.form as MedicationForm] || 'Outro';
   const currentStock = stock ? stock.currentQuantity : 0;
   const minStock = stock ? stock.minThreshold : 5;
-  const expiryLabel = stock && stock.expiryDate ? formatShortDate(stock.expiryDate) : 'Sem validade';
+  const expiryLabel = stock && stock.expiryDate ? formatShortDate(stock.expiryDate) : t('medDetail.noExpiry');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -152,7 +154,7 @@ export default function MedicationDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={C.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detalhes</Text>
+        <Text style={styles.headerTitle}>{t('medDetail.title')}</Text>
         <TouchableOpacity
           onPress={() => {}}
           style={styles.editButton}
@@ -196,13 +198,13 @@ export default function MedicationDetailScreen() {
 
         {/* Adherence */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Adesão ao Tratamento</Text>
+          <Text style={styles.cardTitle}>{t('medDetail.adherenceTitle')}</Text>
           <View style={styles.adherenceRow}>
             <View style={styles.adherenceCircle}>
               <Text style={styles.adherencePercent}>{adherence}%</Text>
             </View>
             <View style={styles.adherenceInfo}>
-              <Text style={styles.adherenceLabel}>Taxa de adesão dos últimos 30 dias</Text>
+              <Text style={styles.adherenceLabel}>{t('medDetail.adherenceSubtitle')}</Text>
               <View style={styles.adherenceBarBg}>
                 <View
                   style={[
@@ -217,20 +219,20 @@ export default function MedicationDetailScreen() {
 
         {/* Schedule */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Agendamento</Text>
+          <Text style={styles.cardTitle}>{t('medDetail.scheduleTitle')}</Text>
           <InfoRow 
             icon="calendar-repeat" 
-            label="Frequência" 
+            label={t('medDetail.freqLabel')} 
             value={schedule ? FREQUENCY_TYPE_LABELS[schedule.frequencyType as FrequencyType] : 'Diariamente'} 
           />
           <InfoRow 
             icon="silverware-fork-knife" 
-            label="Refeição" 
-            value={schedule ? MEAL_RELATION_LABELS[schedule.mealRelation as MealRelation] : 'Sem relação'} 
+            label={t('medDetail.mealLabel')} 
+            value={schedule ? MEAL_RELATION_LABELS[schedule.mealRelation as MealRelation] : t('medDetail.noRelation')} 
           />
           <View style={styles.timesRow}>
             <MaterialCommunityIcons name="clock-outline" size={20} color={C.textSecondary} />
-            <Text style={styles.infoLabel}>Horários</Text>
+            <Text style={styles.infoLabel}>{t('medDetail.timesLabel')}</Text>
             <View style={styles.timeBadges}>
               {schedule && schedule.times ? schedule.times.map((time: string, i: number) => (
                 <View key={i} style={styles.timeBadge}>
@@ -247,10 +249,10 @@ export default function MedicationDetailScreen() {
 
         {/* Stock */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estoque</Text>
-          <InfoRow icon="package-variant" label="Quantidade" value={`${currentStock} unidades`} />
-          <InfoRow icon="alert-circle-outline" label="Alerta em" value={`${minStock} unidades`} />
-          <InfoRow icon="calendar-end" label="Validade" value={expiryLabel} />
+          <Text style={styles.cardTitle}>{t('medDetail.stockTitle')}</Text>
+          <InfoRow icon="package-variant" label={t('medDetail.qtyLabel')} value={`${currentStock} ${t('medDetail.units')}`} />
+          <InfoRow icon="alert-circle-outline" label={t('medDetail.alertLabel')} value={`${minStock} ${t('medDetail.units')}`} />
+          <InfoRow icon="calendar-end" label={t('medDetail.expiryLabel')} value={expiryLabel} />
           <View style={styles.stockBar}>
             <View
               style={[
@@ -268,13 +270,13 @@ export default function MedicationDetailScreen() {
         <View style={styles.actionsCard}>
           <TouchableOpacity style={styles.actionRow} onPress={handleArchive}>
             <MaterialCommunityIcons name="archive-outline" size={22} color={C.textSecondary} />
-            <Text style={styles.actionText}>Arquivar medicamento</Text>
+            <Text style={styles.actionText}>{t('medDetail.archiveBtn')}</Text>
             <MaterialCommunityIcons name="chevron-right" size={22} color={C.textSecondary} />
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionRow} onPress={handleDelete}>
             <MaterialCommunityIcons name="trash-can-outline" size={22} color={C.error} />
-            <Text style={[styles.actionText, { color: C.error }]}>Excluir medicamento</Text>
+            <Text style={[styles.actionText, { color: C.error }]}>{t('medDetail.deleteBtn')}</Text>
             <MaterialCommunityIcons name="chevron-right" size={22} color={C.error} />
           </TouchableOpacity>
         </View>
