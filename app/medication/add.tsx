@@ -391,7 +391,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder=t('addMedication.step1.namePlaceholder')
+            placeholder={t('addMedication.step1.namePlaceholder')}
             placeholderTextColor={C.textSecondary}
             value={name}
             onChangeText={handleNameChange}
@@ -436,7 +436,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder=t('addMedication.step1.dosagePlaceholder')
+            placeholder={t('addMedication.step1.dosagePlaceholder')}
             placeholderTextColor={C.textSecondary}
             value={dosage}
             onChangeText={setDosage}
@@ -521,7 +521,7 @@ export default function AddMedicationScreen() {
         <View style={[styles.inputWrapper, styles.inputWrapperMultiline]}>
           <TextInput
             style={[styles.textInput, styles.textInputMultiline]}
-            placeholder=t('addMedication.step1.instructionsPlaceholder')
+            placeholder={t('addMedication.step1.instructionsPlaceholder')}
             placeholderTextColor={C.textSecondary}
             value={instructions}
             onChangeText={setInstructions}
@@ -745,7 +745,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder=t('addMedication.step3.initialQtyPlaceholder')
+            placeholder={t('addMedication.step3.initialQtyPlaceholder')}
             placeholderTextColor={C.textSecondary}
             value={initialQuantity}
             onChangeText={setInitialQuantity}
@@ -768,7 +768,7 @@ export default function AddMedicationScreen() {
           />
           <TextInput
             style={styles.textInput}
-            placeholder=t('addMedication.step3.thresholdPlaceholder')
+            placeholder={t('addMedication.step3.thresholdPlaceholder')}
             placeholderTextColor={C.textSecondary}
             value={minThreshold}
             onChangeText={setMinThreshold}
@@ -1083,7 +1083,7 @@ export default function AddMedicationScreen() {
           disabled={!isStepValid()}
         >
           <Text style={styles.primaryButtonText}>
-            {currentStep === 3 ? '{t('addMedication.actions.save')}' : 'Próximo'}
+            {currentStep === 3 ? t('addMedication.actions.save') : t('addMedication.actions.next')}
           </Text>
           <MaterialCommunityIcons
             name={currentStep === 3 ? 'check' : 'arrow-right'}

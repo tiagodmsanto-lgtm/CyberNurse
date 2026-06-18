@@ -9,8 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cybernurse.app",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.cybernurse.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -80,8 +79,7 @@
           "calendarPermission": "Cyber Nurse precisa acessar seu calendário para sincronizar lembretes de medicamentos."
         }
       ],
-      "@react-native-firebase/analytics",
-      "expo-localization"
+      "@react-native-firebase/analytics"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { getLocales } from 'expo-localization';
+import { NativeModules, Platform } from 'react-native';
 
 import pt from './locales/pt.json';
 import en from './locales/en.json';
@@ -11,12 +11,20 @@ const languageDetectorPlugin = {
   async: false,
   init: () => {},
   detect: function () {
-    const locales = getLocales();
-    if (locales && locales.length > 0) {
-      const langCode = locales[0].languageCode;
-      if (['en', 'pt', 'es'].includes(langCode || '')) {
+    let locale = 'pt';
+    try {
+      if (Platform.OS === 'ios') {
+        const settings = NativeModules.SettingsManager?.settings;
+        locale = settings?.AppleLocale || settings?.AppleLanguages?.[0] || 'pt';
+      } else {
+        locale = NativeModules.I18nManager?.localeIdentifier || 'pt';
+      }
+      const langCode = locale.split('_')[0].toLowerCase();
+      if (['en', 'pt', 'es'].includes(langCode)) {
         return langCode;
       }
+    } catch (e) {
+      console.warn('Failed to detect locale, falling back to pt', e);
     }
     return 'pt'; // Fallback
   },
