@@ -9,6 +9,7 @@
 export interface Medication {
   id: string;
   name: string;
+  category: 'Medicamento' | 'Suplemento' | 'Vitamina';
   dosage: string; // e.g. '500mg'
   form: MedicationForm;
   color: string; // hex color for UI chip / card accent

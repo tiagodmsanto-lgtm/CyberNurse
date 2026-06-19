@@ -88,6 +88,12 @@ export default function ProfileScreen() {
       title: t('profile.sections.account.title'),
       items: [
         {
+          icon: 'crown',
+          title: 'Versão PREMIUM',
+          color: '#FBC02D',
+          onPress: () => router.push('/premium/paywall'),
+        },
+        {
           icon: 'logout',
           title: t('profile.sections.account.logout'),
           color: '#D32F2F',

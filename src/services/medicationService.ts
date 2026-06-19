@@ -15,6 +15,7 @@ import { getDatabase, generateId } from './database';
 interface MedicationRow {
   id: string;
   name: string;
+  category: string;
   dosage: string;
   form: string;
   color: string;
@@ -29,6 +30,7 @@ interface MedicationRow {
 function rowToMedication(row: MedicationRow): Medication {
   return {
     ...row,
+    category: row.category as Medication['category'],
     form: row.form as Medication['form'],
     isActive: row.isActive === 1,
   };
@@ -135,11 +137,12 @@ export function createMedication(input: CreateMedicationInput): Medication {
 
   db.runSync(
     `INSERT INTO medications
-       (id, name, dosage, form, color, photoUri, instructions, createdAt, updatedAt, isActive)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, name, category, dosage, form, color, photoUri, instructions, createdAt, updatedAt, isActive)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.name,
+      input.category,
       input.dosage,
       input.form,
       input.color,

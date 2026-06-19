@@ -80,7 +80,14 @@
         }
       ],
       "@react-native-firebase/analytics",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-6355833710660579~7389822850",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -89,5 +96,9 @@
       "appName": "Cyber Nurse",
       "appVersion": "1.0.0"
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-6355833710660579~7389822850",
+    "ios_app_id": "ca-app-pub-3940256099942544~1458002511"
   }
 }

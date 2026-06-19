@@ -50,9 +50,9 @@ export async function initDatabase(): Promise<void> {
         const sql = query.trim().toUpperCase();
         if (sql.startsWith('INSERT INTO MEDICATIONS')) {
           webData.medications.push({
-            id: params[0], name: params[1], dosage: params[2], form: params[3], color: params[4],
-            photoUri: params[5], instructions: params[6], createdAt: params[7], updatedAt: params[8],
-            isActive: params[9]
+            id: params[0], name: params[1], category: params[2], dosage: params[3], form: params[4], color: params[5],
+            photoUri: params[6], instructions: params[7], createdAt: params[8], updatedAt: params[9],
+            isActive: params[10]
           });
         } else if (sql.startsWith('INSERT INTO SCHEDULES')) {
           webData.schedules.push({
@@ -207,6 +207,7 @@ function createTables(): void {
     CREATE TABLE IF NOT EXISTS medications (
       id            TEXT PRIMARY KEY NOT NULL,
       name          TEXT NOT NULL,
+      category      TEXT NOT NULL DEFAULT 'Medicamento',
       dosage        TEXT NOT NULL,
       form          TEXT NOT NULL,
       color         TEXT NOT NULL DEFAULT '#E53935',
@@ -369,6 +370,11 @@ function createTables(): void {
   }
   try {
     database.execSync('ALTER TABLE caregivers ADD COLUMN profession TEXT;');
+  } catch (e) {
+    // Column might already exist
+  }
+  try {
+    database.execSync("ALTER TABLE medications ADD COLUMN category TEXT NOT NULL DEFAULT 'Medicamento';");
   } catch (e) {
     // Column might already exist
   }

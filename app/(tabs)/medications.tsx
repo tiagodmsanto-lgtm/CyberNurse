@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   TextInput,
   TouchableOpacity,
   Animated,
@@ -139,6 +139,20 @@ export default function MedicationsScreen() {
 
     return result;
   }, [medications, activeFilter, search]);
+
+  const groupedMedications = useMemo(() => {
+    const sections = [
+      { title: t('addMedication.categories.medicamento'), data: [] as Medication[] },
+      { title: t('addMedication.categories.suplemento'), data: [] as Medication[] },
+      { title: t('addMedication.categories.vitamina'), data: [] as Medication[] },
+    ];
+    filteredMedications.forEach((m) => {
+      if (m.category === 'Suplemento') sections[1].data.push(m);
+      else if (m.category === 'Vitamina') sections[2].data.push(m);
+      else sections[0].data.push(m); // default to Medicamento
+    });
+    return sections.filter(s => s.data.length > 0);
+  }, [filteredMedications, t]);
 
   // Count badges
   const activeCount = medications.filter((m) => m.isActive).length;
@@ -338,10 +352,15 @@ export default function MedicationsScreen() {
       </Animated.View>
 
       {/* ── Medications List ── */}
-      <FlatList
-        data={filteredMedications}
+      <SectionList
+        sections={groupedMedications}
         keyExtractor={keyExtractor}
         renderItem={renderMedication}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{title}</Text>
+          </View>
+        )}
         ListHeaderComponent={renderListHeader}
         ListEmptyComponent={renderEmptyState}
         contentContainerStyle={[
@@ -543,6 +562,20 @@ const styles = StyleSheet.create({
   },
   listContentEmpty: {
     flexGrow: 1,
+  },
+
+  // Section Headers
+  sectionHeader: {
+    backgroundColor: Colors.background,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: 4,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
 
   // Empty state

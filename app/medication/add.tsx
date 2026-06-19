@@ -21,7 +21,7 @@ import { createMedication, generateDosesForDay, searchMedications, searchAliment
 import { getDatabase, generateId } from '../../src/services/database';
 import { useMedicationStore } from '../../src/stores';
 import { logMedicationAdded } from '../../src/services/analytics';
-
+import { Spacing, BorderRadius } from '../../src/theme/spacing';
 // ─── Inline Color Palette (Pokémon Center) ──────────────
 const C = {
   primary: '#E53935',
@@ -123,6 +123,7 @@ export default function AddMedicationScreen() {
   const [currentStep, setCurrentStep] = useState(0);
 
   // Step 1: Name + Dosage + Form
+  const [category, setCategory] = useState<'Medicamento' | 'Suplemento' | 'Vitamina'>('Medicamento');
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
   const [selectedForm, setSelectedForm] = useState<MedicationFormType | null>(null);
@@ -247,6 +248,7 @@ export default function AddMedicationScreen() {
       // 1. Create medication in DB
       const newMed = createMedication({
         name: name.trim(),
+        category,
         dosage: dosage.trim(),
         form: selectedForm as any,
         color: selectedColor,
@@ -379,9 +381,43 @@ export default function AddMedicationScreen() {
         {t('addMedication.step1.subtitle')}
       </Text>
 
+      {/* Category Selection */}
+      <View style={[styles.inputGroup, { zIndex: 11 }]}>
+        <Text style={styles.inputLabel}>{t('addMedication.step1.categoryLabel')}</Text>
+        <View style={styles.categoryGrid}>
+          {['Medicamento', 'Suplemento', 'Vitamina'].map((cat) => {
+            const isSelected = category === cat;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[
+                  styles.categoryCard,
+                  isSelected && styles.categoryCardSelected,
+                ]}
+                onPress={() => setCategory(cat as any)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.categoryLabel,
+                    isSelected && styles.categoryLabelSelected,
+                  ]}
+                >
+                  {t(`addMedication.categories.${cat.toLowerCase()}`)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
       {/* Name Input */}
       <View style={[styles.inputGroup, { zIndex: 10 }]}>
-        <Text style={styles.inputLabel}>{t('addMedication.step1.nameLabel')}</Text>
+        <Text style={styles.inputLabel}>
+          {category === 'Medicamento' 
+            ? t('addMedication.step1.nameLabel') 
+            : t('addMedication.step1.nameLabelSupplement')}
+        </Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="pill"
@@ -432,7 +468,11 @@ export default function AddMedicationScreen() {
 
       {/* Dosage Input */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{t('addMedication.step1.dosageLabel')}</Text>
+        <Text style={styles.inputLabel}>
+          {category === 'Medicamento' 
+            ? t('addMedication.step1.dosageLabel') 
+            : t('addMedication.step1.dosageLabelSupplement')}
+        </Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons
             name="scale-balance"
@@ -1292,9 +1332,37 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Input groups
+  // Generic Input Group
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: Spacing.xl,
+  },
+  
+  // Category Styles
+  categoryGrid: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  categoryCard: {
+    flex: 1,
+    backgroundColor: C.surface,
+    borderWidth: 1.5,
+    borderColor: C.surfaceAlt,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCardSelected: {
+    backgroundColor: C.primary,
+    borderColor: C.primaryDark,
+  },
+  categoryLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: C.textSecondary,
+  },
+  categoryLabelSelected: {
+    color: C.white,
   },
   inputLabel: {
     fontSize: 14,

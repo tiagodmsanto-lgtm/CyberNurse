@@ -74,7 +74,7 @@
   },
   "tabs": {
     "home": "Hoje",
-    "medications": "Medicamentos",
+    "medications": "Controle",
     "calendar": "Calendário",
     "profile": "Perfil"
   },
@@ -94,9 +94,9 @@
     "emptySubtitle": "Adicione seus medicamentos para começar a receber lembretes"
   },
   "medications": {
-    "title": "Medicamentos",
-    "subtitle": "Gerencie todos os seus medicamentos",
-    "searchPlaceholder": "Buscar medicamento...",
+    "title": "Controle",
+    "subtitle": "Gerencie todos os seus produtos",
+    "searchPlaceholder": "Buscar produto...",
     "filterAll": "Todos",
     "filterActive": "Ativos",
     "filterArchived": "Arquivados",
@@ -105,10 +105,10 @@
     "countPlural": "medicamentos",
     "emptySearchTitle": "Nenhum resultado encontrado",
     "emptySearchSubtitle": "Tente buscar com outros termos",
-    "emptyArchivedTitle": "Nenhum medicamento arquivado",
-    "emptyAllTitle": "Nenhum medicamento cadastrado",
-    "emptyAllSubtitle": "Toque no botão + para adicionar seu primeiro medicamento",
-    "addButton": "Adicionar Medicamento"
+    "emptyArchivedTitle": "Nenhum produto arquivado",
+    "emptyAllTitle": "Nenhum produto cadastrado",
+    "emptyAllSubtitle": "Toque no botão + para adicionar seu primeiro produto",
+    "addButton": "Novo Produto"
   },
   "calendar": {
     "title": "Calendário",
@@ -133,6 +133,11 @@
       "drops": "Gotas",
       "other": "Outro"
     },
+    "categories": {
+      "medicamento": "Medicamento",
+      "suplemento": "Suplemento",
+      "vitamina": "Vitamina"
+    },
     "frequency": {
       "daily": "Diariamente",
       "dailyDesc": "Todos os dias",
@@ -148,11 +153,14 @@
       "review": "Revisão"
     },
     "step1": {
-      "title": "Informações do Medicamento",
-      "subtitle": "Preencha os dados básicos do seu medicamento",
+      "title": "Informações do Produto",
+      "subtitle": "Preencha os dados básicos do seu produto",
+      "categoryLabel": "Categoria *",
       "nameLabel": "Nome do Medicamento *",
       "namePlaceholder": "Ex: Losartana",
+      "nameLabelSupplement": "Produto (ex: Suplemento + Marca) *",
       "dosageLabel": "Dosagem *",
+      "dosageLabelSupplement": "Quantidade de 1 porção (em gramas) *",
       "dosagePlaceholder": "Ex: 50mg",
       "formLabel": "Forma Farmacêutica *",
       "colorLabel": "Cor de Identificação",
@@ -189,13 +197,13 @@
     "actions": {
       "back": "Voltar",
       "next": "Próximo passo",
-      "save": "Salvar Medicamento"
+      "save": "Salvar Produto"
     },
     "alerts": {
-      "successTitle": "Medicamento Salvo! 💊",
+      "successTitle": "Produto Salvo! 💊",
       "successMessage": "{{name}} ({{dosage}}) foi adicionado com sucesso.",
       "errorTitle": "Erro",
-      "errorMessage": "Não foi possível salvar o medicamento."
+      "errorMessage": "Não foi possível salvar o produto."
     }
   },
   "medDetail": {

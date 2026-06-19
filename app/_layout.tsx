@@ -1,14 +1,18 @@
 import { useFonts } from 'expo-font';
 import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { StatusBar, View, Platform } from 'react-native';
 import 'react-native-reanimated';
 import { PaperProvider } from 'react-native-paper';
 import { PaperTheme } from '../src/theme';
 import { initDatabase } from '../src/services/database';
 import { logScreenView } from '../src/services/analytics';
 import { logCrashMessage } from '../src/services/crashlytics';
+import mobileAds, { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+import { AdBanner } from '../src/components/AdBanner';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import { useSubscriptionStore } from '../src/stores/subscriptionStore';
 import '../src/i18n';
 
 export {
@@ -45,8 +49,37 @@ export default function RootLayout() {
     }
     setupDb();
     
+    // Initialize Google Mobile Ads
+    mobileAds()
+      .initialize()
+      .then(adapterStatuses => {
+        console.log('Mobile Ads initialized', adapterStatuses);
+      })
+      .catch(err => console.error('Failed to init Mobile Ads', err));
+      
     // Log app initialization to Crashlytics to leave a breadcrumb
     logCrashMessage('App RootLayout mounted and Database init started');
+
+    // Initialize RevenueCat
+    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    if (Platform.OS === 'ios') {
+      Purchases.configure({ apiKey: 'YOUR_REVENUECAT_IOS_API_KEY_HERE' });
+    } else if (Platform.OS === 'android') {
+      Purchases.configure({ apiKey: 'YOUR_REVENUECAT_ANDROID_API_KEY_HERE' });
+    }
+
+    // Check Premium status
+    const checkSubscription = async () => {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        // Assume the entitlement is named "premium" in RevenueCat
+        const hasPremium = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
+        useSubscriptionStore.getState().setPremium(hasPremium);
+      } catch (e) {
+        console.error('Failed to get RevenueCat customer info:', e);
+      }
+    };
+    checkSubscription();
   }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -69,12 +102,35 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const pathname = usePathname();
+  const previousPathname = useRef(pathname);
+  const lastAdShownTime = useRef(0);
+  const isPremium = useSubscriptionStore((state) => state.isPremium);
+
+  const interstitialId = __DEV__ 
+    ? TestIds.INTERSTITIAL 
+    : (Platform.OS === 'android' ? 'ca-app-pub-6355833710660579/1778137599' : TestIds.INTERSTITIAL);
+
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(interstitialId, {
+    requestNonPersonalizedAdsOnly: true,
+  });
 
   useEffect(() => {
-    if (pathname) {
+    load();
+  }, [load, isClosed]);
+
+  useEffect(() => {
+    if (pathname && pathname !== previousPathname.current) {
+      previousPathname.current = pathname;
       logScreenView(pathname);
+
+      const now = Date.now();
+      // Show ad if not premium, loaded and more than 2 minutes have passed
+      if (!isPremium && isLoaded && (now - lastAdShownTime.current) > 120000) {
+        show();
+        lastAdShownTime.current = now;
+      }
     }
-  }, [pathname]);
+  }, [pathname, isLoaded, show, isPremium]);
 
   return (
     <PaperProvider theme={PaperTheme}>
@@ -83,7 +139,8 @@ function RootLayoutNav() {
         backgroundColor="#E53935"
         translucent={false}
       />
-      <Stack
+      <View style={{ flex: 1, backgroundColor: '#FFF8F8' }}>
+        <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: '#FFF8F8' },
@@ -115,6 +172,8 @@ function RootLayoutNav() {
           }}
         />
       </Stack>
+      {!isPremium && <AdBanner />}
+      </View>
     </PaperProvider>
   );
 }
