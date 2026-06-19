@@ -42,3 +42,6 @@ yarn-error.*
 
 # Firebase config para o Expo
 google-services.json
+
+# Variáveis de ambiente secretas
+.env

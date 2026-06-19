@@ -294,6 +294,84 @@ function createTables(): void {
       notifyMissed INTEGER NOT NULL DEFAULT 1
     );
   `);
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS diet_logs (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      mealName TEXT NOT NULL,
+      isCompleted INTEGER NOT NULL DEFAULT 1,
+      type TEXT NOT NULL DEFAULT 'meal'
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS hydration_logs (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      amountMl REAL NOT NULL
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS body_metrics (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      weight REAL,
+      fatPercentage REAL,
+      leanMass REAL,
+      bodyWater REAL,
+      waist REAL,
+      abdomen REAL,
+      arm REAL,
+      thigh REAL
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS vitals_logs (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      value REAL NOT NULL,
+      unit TEXT NOT NULL,
+      notes TEXT
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS symptoms_logs (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      symptom TEXT NOT NULL,
+      severity INTEGER NOT NULL,
+      medicationId TEXT,
+      notes TEXT
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS performance_logs (
+      id TEXT PRIMARY KEY NOT NULL,
+      date INTEGER NOT NULL,
+      trainingLoad INTEGER,
+      sleepHours REAL,
+      sleepQuality INTEGER,
+      fatigueLevel INTEGER,
+      caloriesConsumed REAL,
+      caloriesBurned REAL
+    );
+  `);
+
+  try {
+    database.execSync('ALTER TABLE caregivers ADD COLUMN type TEXT NOT NULL DEFAULT \'personal\';');
+  } catch (e) {
+    // Column might already exist
+  }
+  try {
+    database.execSync('ALTER TABLE caregivers ADD COLUMN profession TEXT;');
+  } catch (e) {
+    // Column might already exist
+  }
 }
 
 // ─── Utility helpers ───────────────────────────

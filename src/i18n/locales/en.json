@@ -261,5 +261,85 @@
     "title": "Screen not found",
     "subtitle": "This page does not exist in Cyber Nurse",
     "back": "← Back to home"
+  },
+  "supportNetwork": {
+    "title": "Support Network",
+    "addContact": "Add Contact",
+    "emptyState": "No contacts added.",
+    "emptyStateDesc": "Register people from your support network and reference health professionals.",
+    "name": "Name",
+    "namePlaceholder": "Full name",
+    "bondType": "Bond",
+    "bondPersonal": "Personal",
+    "bondProfessional": "Professional",
+    "relationLabel": "Relationship",
+    "professionLabel": "Profession",
+    "phone": "Phone",
+    "phonePlaceholder": "(000) 000-0000",
+    "email": "Email",
+    "emailPlaceholder": "contact@email.com",
+    "save": "Save Contact",
+    "cancel": "Cancel",
+    "alerts": {
+      "success": "Contact saved successfully!",
+      "error": "Error saving contact.",
+      "fillRequired": "Please fill in the name and bond."
+    },
+    "relations": {
+      "parent": "Parent",
+      "child": "Child",
+      "spouse": "Spouse",
+      "sibling": "Sibling",
+      "friend": "Friend",
+      "other": "Other"
+    },
+    "professions": {
+      "doctor": "General Practitioner",
+      "cardiologist": "Cardiologist",
+      "nurse": "Nurse",
+      "pharmacist": "Pharmacist",
+      "physiotherapist": "Physiotherapist",
+      "nutritionist": "Nutritionist",
+      "psychologist": "Psychologist",
+      "dentist": "Dentist",
+      "other": "Other Specialty"
+    }
+  },
+  "reports": {
+    "title": "Reports Center",
+    "exportPdf": "Export PDF",
+    "adherence": {
+      "title": "Protocol Adherence",
+      "desc": "Medication, diet and hydration goals",
+      "medication": "Medication Adherence",
+      "diet": "Diet Adherence",
+      "hydration": "Daily Hydration",
+      "taken": "Taken",
+      "missed": "Missed",
+      "meals": "Meals",
+      "freeMeals": "Cheat Meals"
+    },
+    "anthropometry": {
+      "title": "Body Evolution",
+      "desc": "Weight history, fat % and measurements",
+      "weight": "Weight Evolution (kg)",
+      "fat": "Body Fat (%)"
+    },
+    "vitals": {
+      "title": "Vitals and Symptoms",
+      "desc": "Clinical panel and symptom diary",
+      "bp": "Blood Pressure",
+      "sys": "Systolic",
+      "dia": "Diastolic",
+      "glucose": "Blood Glucose",
+      "symptoms": "Symptom Diary",
+      "severity": "Severity"
+    },
+    "performance": {
+      "title": "Performance & Energy",
+      "desc": "Training load, recovery and energy balance",
+      "sleep": "Hours of Sleep",
+      "trainingLoad": "Training Load"
+    }
   }
 }

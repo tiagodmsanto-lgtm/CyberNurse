@@ -63,8 +63,8 @@ export default function ProfileScreen() {
       title: t('profile.sections.health.title'),
       subtitle: t('profile.sections.health.subtitle'),
       items: [
-        { icon: 'account-group-outline', title: t('profile.sections.health.caregivers') },
-        { icon: 'chart-line', title: t('profile.sections.health.reports') },
+        { icon: 'account-group-outline', title: t('supportNetwork.title'), onPress: () => router.push('/profile/support-network') },
+        { icon: 'chart-line', title: t('profile.sections.health.reports'), onPress: () => router.push('/reports') },
         { icon: 'download-outline', title: t('profile.sections.health.export') },
       ],
     },

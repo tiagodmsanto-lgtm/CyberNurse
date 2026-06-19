@@ -411,7 +411,13 @@ export default function AddMedicationScreen() {
                 style={styles.autocompleteItem}
                 onPress={() => {
                   setName(item.name);
-                  if (item.dosage && item.dosage !== 'N/A') setDosage(item.dosage);
+                  if (item.dosage && item.dosage !== 'N/A') {
+                    // Extract just the pure dosage (e.g. "500mg", "100 MG/ML", "50 MG + 12,5 MG")
+                    // Matches a number, optional space, unit, optional /unit, and optional + combinations
+                    const match = item.dosage.match(/(\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?(?:\s*\+\s*\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?)*)/i);
+                    const cleanDosage = match ? match[1] : item.dosage.split(/ \(| - | c\/ | com | SOL | COM | CAP | INJ | CX | FR /i)[0].trim();
+                    setDosage(cleanDosage);
+                  }
                   setShowDropdown(false);
                   Keyboard.dismiss();
                 }}

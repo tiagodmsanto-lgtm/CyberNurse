@@ -274,7 +274,7 @@ export function getDosesByDateRange(start: number, end: number): DoseWithMedicat
     `SELECT d.*, m.name as medicationName, m.dosage as dosage, m.color as color, m.form as form
      FROM doses d
      JOIN medications m ON d.medicationId = m.id
-     WHERE d.scheduledAt >= ? AND d.scheduledAt <= ?
+     WHERE d.scheduledAt >= ? AND d.scheduledAt <= ? AND m.isActive = 1
      ORDER BY d.scheduledAt ASC`,
     [start, end]
   );
@@ -287,7 +287,7 @@ export function getDoseWithMedicationById(doseId: string): DoseWithMedication | 
     `SELECT d.*, m.name as medicationName, m.dosage as dosage, m.color as color, m.form as form
      FROM doses d
      JOIN medications m ON d.medicationId = m.id
-     WHERE d.id = ?`,
+     WHERE d.id = ? AND m.isActive = 1`,
     [doseId]
   );
   return row || null;
@@ -343,7 +343,44 @@ export function generateDosesForDay(date: Date): void {
           continue;
         }
         
-        for (const timeStr of timesList) {
+        let timesToGenerate: string[] = [];
+        if (sched.frequencyType === 'interval') {
+          try {
+             const val = JSON.parse(sched.frequencyValue);
+             const hours = val.hours || 8;
+             const firstTime = timesList[0] || "08:00";
+             const [h, m] = firstTime.split(':').map(Number);
+             
+             const baseDate = new Date(sched.startDate);
+             baseDate.setHours(h, m, 0, 0);
+             let currentDoseTime = baseDate.getTime();
+             
+             const targetDayStart = startOfDay.getTime();
+             const targetDayEnd = endOfDay.getTime();
+             
+             if (currentDoseTime <= targetDayEnd) {
+                 const intervalMs = hours * 60 * 60 * 1000;
+                 if (currentDoseTime < targetDayStart) {
+                     const diff = targetDayStart - currentDoseTime;
+                     const periods = Math.ceil(diff / intervalMs);
+                     currentDoseTime += periods * intervalMs;
+                 }
+                 
+                 while (currentDoseTime <= targetDayEnd) {
+                     const d = new Date(currentDoseTime);
+                     const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                     timesToGenerate.push(timeStr);
+                     currentDoseTime += intervalMs;
+                 }
+             }
+          } catch (e) {
+             console.error('Failed to parse interval data for schedule', sched.id, e);
+          }
+        } else {
+          timesToGenerate = timesList;
+        }
+        
+        for (const timeStr of timesToGenerate) {
           const [hourStr, minStr] = timeStr.split(':');
           const hour = parseInt(hourStr, 10);
           const min = parseInt(minStr, 10);

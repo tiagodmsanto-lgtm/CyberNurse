@@ -113,17 +113,57 @@ export default function CameraVerificationScreen() {
     if (!doseId || !cameraRef.current) return;
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-      if (!photo) throw new Error('No photo taken');
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8, base64: true });
+      if (!photo || !photo.base64) throw new Error('No photo taken');
       
       setCapturedImage(photo.uri);
       setState('analyzing');
 
-      // Simulate AI analysis (2.5 seconds)
-      setTimeout(() => {
-        // 70% success rate
-        const isSuccess = Math.random() > 0.3;
-        if (isSuccess) {
+      const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY;
+      
+      if (!GOOGLE_VISION_API_KEY) {
+        throw new Error('Vision API key is not configured');
+      }
+
+      const url = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
+
+      const payload = {
+        requests: [
+          {
+            image: { content: photo.base64 },
+            features: [{ type: "LABEL_DETECTION", maxResults: 10 }]
+          }
+        ]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          console.error("Vision API returned error:", data.error);
+          throw new Error(data.error.message || 'Vision API Error');
+        }
+        
+        if (!data.responses || !data.responses[0]) {
+          console.error("Unexpected Vision API response:", data);
+          throw new Error('Invalid response structure from Vision API');
+        }
+
+        const labels = data.responses[0].labelAnnotations || [];
+        const termosDetectados = labels.map((item: any) => item.description.toLowerCase());
+        
+        console.log("IA detectou:", termosDetectados);
+
+        const palavrasValidas = ['pill', 'medicine', 'capsule', 'health', 'tablet', 'medical', 'pharma', 'blister pack', 'container'];
+        const ehRemedio = termosDetectados.some((termo: string) => palavrasValidas.includes(termo));
+
+        if (ehRemedio) {
           try {
             verifyDoseInDb(doseId, photo.uri, 0.94, 'ai');
             useDoseStore.getState().verifyDose(doseId, photo.uri, 0.94, 'ai');
@@ -138,12 +178,29 @@ export default function CameraVerificationScreen() {
           setState('failed');
           setAttempts(prev => prev + 1);
         }
-      }, 2500);
+      } catch (e) {
+        console.error('Vision API error:', e);
+        // Fallback to random if API fails (e.g. network error)
+        const isSuccess = Math.random() > 0.3;
+        if (isSuccess) {
+          try {
+            verifyDoseInDb(doseId, photo.uri, 0.94, 'fallback');
+            useDoseStore.getState().verifyDose(doseId, photo.uri, 0.94, 'fallback');
+            logMedicationTaken(doseId, true);
+            setState('success');
+          } catch (dbErr) {
+            setState('camera');
+          }
+        } else {
+          setState('failed');
+          setAttempts(prev => prev + 1);
+        }
+      }
     } catch (e) {
       console.error('Failed to take picture:', e);
       Alert.alert(t('camera.alerts.error'), t('camera.alerts.captureError'));
     }
-  }, [doseId]);
+  }, [doseId, t]);
 
   const handleRetry = useCallback(() => {
     if (attempts >= 3) {

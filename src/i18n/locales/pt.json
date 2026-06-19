@@ -261,5 +261,85 @@
     "title": "Tela não encontrada",
     "subtitle": "Esta página não existe no Cyber Nurse",
     "back": "← Voltar ao início"
+  },
+  "supportNetwork": {
+    "title": "Rede de Apoio",
+    "addContact": "Adicionar Contato",
+    "emptyState": "Nenhum contato adicionado.",
+    "emptyStateDesc": "Cadastre pessoas da sua rede de apoio e profissionais da saúde de referência.",
+    "name": "Nome",
+    "namePlaceholder": "Nome completo",
+    "bondType": "Vínculo",
+    "bondPersonal": "Pessoal",
+    "bondProfessional": "Profissional",
+    "relationLabel": "Parentesco",
+    "professionLabel": "Profissão",
+    "phone": "Telefone",
+    "phonePlaceholder": "(00) 00000-0000",
+    "email": "E-mail",
+    "emailPlaceholder": "contato@email.com",
+    "save": "Salvar Contato",
+    "cancel": "Cancelar",
+    "alerts": {
+      "success": "Contato salvo com sucesso!",
+      "error": "Erro ao salvar contato.",
+      "fillRequired": "Por favor, preencha o nome e o vínculo."
+    },
+    "relations": {
+      "parent": "Pai / Mãe",
+      "child": "Filho(a)",
+      "spouse": "Cônjuge",
+      "sibling": "Irmão / Irmã",
+      "friend": "Amigo(a)",
+      "other": "Outro"
+    },
+    "professions": {
+      "doctor": "Médico(a) Geral",
+      "cardiologist": "Cardiologista",
+      "nurse": "Enfermeiro(a)",
+      "pharmacist": "Farmacêutico(a)",
+      "physiotherapist": "Fisioterapeuta",
+      "nutritionist": "Nutricionista",
+      "psychologist": "Psicólogo(a)",
+      "dentist": "Dentista",
+      "other": "Outra Especialidade"
+    }
+  },
+  "reports": {
+    "title": "Central de Relatórios",
+    "exportPdf": "Exportar PDF",
+    "adherence": {
+      "title": "Adesão ao Protocolo",
+      "desc": "Medicação, dieta e metas de hidratação",
+      "medication": "Adesão à Medicação",
+      "diet": "Adesão à Dieta",
+      "hydration": "Hidratação Diária",
+      "taken": "Tomadas",
+      "missed": "Esquecidas",
+      "meals": "Refeições",
+      "freeMeals": "Ref. Livres"
+    },
+    "anthropometry": {
+      "title": "Evolução Corporal",
+      "desc": "Histórico de peso, % de gordura e medidas",
+      "weight": "Evolução do Peso (kg)",
+      "fat": "Gordura Corporal (%)"
+    },
+    "vitals": {
+      "title": "Sinais Vitais e Sintomas",
+      "desc": "Painel clínico e diário de sintomas",
+      "bp": "Pressão Arterial",
+      "sys": "Sistólica",
+      "dia": "Diastólica",
+      "glucose": "Glicemia",
+      "symptoms": "Diário de Sintomas",
+      "severity": "Gravidade"
+    },
+    "performance": {
+      "title": "Performance e Energia",
+      "desc": "Carga de treino, recuperação e balanço calórico",
+      "sleep": "Horas de Sono",
+      "trainingLoad": "Carga de Treino"
+    }
   }
 }
