@@ -8,6 +8,7 @@ import type { Schedule } from '../models/Schedule';
 import type { Dose } from '../models/Dose';
 import type { Stock } from '../models/Stock';
 import { getDatabase, generateId } from './database';
+import { scheduleDoseAlarm, cancelDoseAlarm } from './notificationService';
 
 // ─── Row ↔ Model mapping ──────────────────────
 
@@ -415,6 +416,9 @@ export function generateDosesForDay(date: Date): void {
                 null
               ]
             );
+            
+            // Schedule the push notification alarm for this dose
+            scheduleDoseAlarm(doseId, med.name, scheduledAt);
           }
         }
       }
@@ -451,6 +455,9 @@ export function verifyDoseInDb(
     [now, photoUri, score, method, doseId]
   );
   
+  // Cancel the alarm if the user took it
+  cancelDoseAlarm(doseId);
+  
   db.runSync(
     `UPDATE stock 
      SET currentQuantity = MAX(0, currentQuantity - 1) 
@@ -469,4 +476,8 @@ export function updateDoseStatusInDb(
     'UPDATE doses SET status = ?, takenAt = ? WHERE id = ?',
     [status, status === 'taken' ? (takenAt ?? Date.now()) : null, doseId]
   );
+  
+  if (status !== 'pending') {
+    cancelDoseAlarm(doseId);
+  }
 }

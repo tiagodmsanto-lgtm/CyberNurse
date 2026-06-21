@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, useRef } from 'react';
 import { StatusBar, View, Platform } from 'react-native';
@@ -12,8 +12,19 @@ import { logCrashMessage } from '../src/services/crashlytics';
 import mobileAds, { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 import { AdBanner } from '../src/components/AdBanner';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import * as Notifications from 'expo-notifications';
+import notifee, { EventType } from '@notifee/react-native';
 import { useSubscriptionStore } from '../src/stores/subscriptionStore';
 import '../src/i18n';
+import { requestNotificationPermissions } from '../src/services/notificationService';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -48,6 +59,9 @@ export default function RootLayout() {
       }
     }
     setupDb();
+    
+    // Request notification permissions
+    requestNotificationPermissions();
     
     // Initialize Google Mobile Ads
     mobileAds()
@@ -130,6 +144,50 @@ function RootLayoutNav() {
         lastAdShownTime.current = now;
       }
     }
+
+    // Lida com cliques do expo-notifications (caso ainda existam antigas)
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data?.doseId) {
+        router.push({
+          pathname: '/verification/camera',
+          params: { doseId: data.doseId, isAlarm: data.isAlarm ? 'true' : 'false' }
+        });
+      }
+    });
+
+    // Lida com cliques e tela cheia do Notifee (Foreground)
+    const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
+        const data = detail.notification?.data;
+        if (data?.doseId) {
+          router.push({
+            pathname: '/verification/camera',
+            params: { doseId: data.doseId, isAlarm: 'true' }
+          });
+        }
+      }
+    });
+
+    // Verifica se o app foi aberto pelo Notifee (Closed/Background state)
+    notifee.getInitialNotification().then(initialNotification => {
+      if (initialNotification) {
+        const data = initialNotification.notification.data;
+        if (data?.doseId) {
+          setTimeout(() => {
+            router.push({
+              pathname: '/verification/camera',
+              params: { doseId: data.doseId, isAlarm: 'true' }
+            });
+          }, 500); // pequeno atraso para garantir que o root layout montou
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      unsubscribeNotifee();
+    };
   }, [pathname, isLoaded, show, isPremium]);
 
   return (

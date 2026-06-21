@@ -71,7 +71,7 @@ export default function ProfileScreen() {
     {
       title: t('profile.sections.app.title'),
       items: [
-        { icon: 'information-outline', title: t('profile.sections.app.about') },
+        { icon: 'information-outline', title: t('profile.sections.app.about'), onPress: () => router.push('/profile/about') },
         { icon: 'file-document-outline', title: t('profile.sections.app.terms') },
         { icon: 'shield-check-outline', title: t('profile.sections.app.privacy') },
         {

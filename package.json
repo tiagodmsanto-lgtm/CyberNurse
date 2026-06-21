@@ -4,11 +4,13 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@notifee/react-native": "^9.1.8",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-firebase/analytics": "^24.1.1",
     "@react-native-firebase/app": "^24.1.1",
     "@react-native-firebase/crashlytics": "^24.1.1",
     "expo": "~56.0.12",
+    "expo-audio": "~56.0.12",
     "expo-build-properties": "~56.0.19",
     "expo-calendar": "^56.0.8",
     "expo-camera": "^56.0.8",

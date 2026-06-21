@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
 import { useDoseStore } from '../../src/stores';
 import { logMedicationTaken } from '../../src/services/analytics';
+import { useAudioPlayer } from 'expo-audio';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -44,7 +46,7 @@ type VerificationState = 'camera' | 'analyzing' | 'success' | 'failed';
 export default function CameraVerificationScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { doseId } = useLocalSearchParams<{ doseId: string }>();
+  const { doseId, isAlarm } = useLocalSearchParams<{ doseId: string, isAlarm: string }>();
   const [state, setState] = useState<VerificationState>('camera');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
@@ -55,6 +57,20 @@ export default function CameraVerificationScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+  
+  // Hook do expo-audio
+  const audioPlayer = useAudioPlayer(require('../../assets/sounds/alarm.ogg'));
+
+  // Lógica para tocar o alarme
+  useEffect(() => {
+    if (isAlarm === 'true' && state === 'camera') {
+      console.log('⏰ Iniciando som de alarme...');
+      audioPlayer.loop = true;
+      audioPlayer.play();
+    } else {
+      audioPlayer.pause();
+    }
+  }, [isAlarm, state]);
 
   useEffect(() => {
     if (doseId) {
@@ -66,6 +82,27 @@ export default function CameraVerificationScreen() {
       }
     }
   }, [doseId]);
+
+  // Prevent back navigation if it's an alarm
+  useEffect(() => {
+    if (isAlarm === 'true') {
+      const backAction = () => {
+        Alert.alert(
+          t('camera.alerts.alarmActiveTitle'),
+          t('camera.alerts.alarmActiveMsg'),
+          [{ text: t('camera.alerts.understood'), style: 'cancel' }]
+        );
+        return true; // Prevent default behavior
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction,
+      );
+
+      return () => backHandler.remove();
+    }
+  }, [isAlarm, t]);
 
   // Start pulse animation for the camera button
   React.useEffect(() => {
@@ -263,13 +300,15 @@ export default function CameraVerificationScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Top Right Close Button */}
-      <TouchableOpacity 
-        style={[styles.topRightCloseButton, { top: Math.max(insets.top + 16, 16) }]}
-        onPress={() => router.back()}
-        activeOpacity={0.8}
-      >
-        <MaterialCommunityIcons name="close" size={28} color={C.white} />
-      </TouchableOpacity>
+      {isAlarm !== 'true' && (
+        <TouchableOpacity 
+          style={[styles.topRightCloseButton, { top: Math.max(insets.top + 16, 16) }]}
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="close" size={28} color={C.white} />
+        </TouchableOpacity>
+      )}
 
       {/* Camera Preview Area */}
       <View style={styles.cameraArea}>

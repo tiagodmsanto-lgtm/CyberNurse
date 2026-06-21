@@ -87,7 +87,8 @@
           "androidAppId": "ca-app-pub-6355833710660579~7389822850",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ]
+      ],
+      "./withNotifeeRepo.js"
     ],
     "experiments": {
       "typedRoutes": true
