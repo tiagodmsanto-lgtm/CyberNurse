@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
@@ -88,9 +88,11 @@ export default function MedicationDetailScreen() {
     }
   }, [id]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleDelete = () => {
     if (!medication) return;
@@ -156,7 +158,7 @@ export default function MedicationDetailScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('medDetail.title')}</Text>
         <TouchableOpacity
-          onPress={() => {}}
+          onPress={() => router.push(`/medication/edit?id=${medication.id}`)}
           style={styles.editButton}
         >
           <MaterialCommunityIcons name="pencil" size={20} color={C.white} />

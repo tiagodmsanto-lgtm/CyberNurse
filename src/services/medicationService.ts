@@ -250,6 +250,45 @@ export function getSchedulesByMedicationId(medicationId: string): Schedule[] {
   }));
 }
 
+export function updateSchedule(
+  scheduleId: string,
+  frequencyType: string,
+  frequencyValue: string,
+  times: string
+): void {
+  const db = getDatabase();
+  db.runSync(
+    'UPDATE schedules SET frequencyType = ?, frequencyValue = ?, times = ? WHERE id = ?',
+    [frequencyType, frequencyValue, times, scheduleId]
+  );
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const startOfDayMs = startOfDay.getTime();
+
+  // Cancel alarms for pending doses before deleting them
+  const pendingDoses = db.getAllSync<{ id: string }>(
+    'SELECT id FROM doses WHERE scheduleId = ? AND status = ? AND scheduledAt >= ?',
+    [scheduleId, 'pending', startOfDayMs]
+  );
+  
+  for (const dose of pendingDoses) {
+    cancelDoseAlarm(dose.id);
+  }
+
+  db.runSync(
+    'DELETE FROM doses WHERE scheduleId = ? AND status = ? AND scheduledAt >= ?',
+    [scheduleId, 'pending', startOfDayMs]
+  );
+
+  generateDosesForDay(new Date());
+}
+
+export function updateStockExpiry(stockId: string, expiryDate: number | null): void {
+  const db = getDatabase();
+  db.runSync('UPDATE stock SET expiryDate = ? WHERE id = ?', [expiryDate, stockId]);
+}
+
 export function getStockByMedicationId(medicationId: string): Stock | null {
   const db = getDatabase();
   const row = db.getFirstSync<Stock>(
@@ -481,3 +520,21 @@ export function updateDoseStatusInDb(
     cancelDoseAlarm(doseId);
   }
 }
+
+export async function rescheduleAllAlarms(): Promise<void> {
+  const db = getDatabase();
+  const now = Date.now();
+  const pendingDoses = db.getAllSync<any>(
+    `SELECT d.id, d.scheduledAt, m.name as medicationName
+     FROM doses d
+     JOIN medications m ON d.medicationId = m.id
+     WHERE d.status = 'pending' AND d.scheduledAt >= ? AND m.isActive = 1`,
+    [now]
+  );
+  
+  for (const dose of pendingDoses) {
+    await cancelDoseAlarm(dose.id);
+    await scheduleDoseAlarm(dose.id, dose.medicationName, dose.scheduledAt);
+  }
+}
+

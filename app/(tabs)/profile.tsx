@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 
-import { getAllMedications } from '../../src/services/medicationService';
+import { getAllMedications, rescheduleAllAlarms } from '../../src/services/medicationService';
 import { getDatabase } from '../../src/services/database';
 import { useUserProfileStore } from '../../src/stores/userProfileStore';
 import { useAppStore } from '../../src/stores/appStore';
@@ -65,7 +65,7 @@ export default function ProfileScreen() {
           title: 'Som do Alarme',
           trailing: (
             <Text style={{ fontSize: 14, color: '#757575' }}>
-              {alarmSound === 'alarm' ? 'Padrão' : 'Toque 1'}
+              {alarmSound === 'alarm' ? 'Padrão 01' : 'Padrão 02'}
             </Text>
           ),
           onPress: () => setShowSoundModal(true),
@@ -308,25 +308,27 @@ export default function ProfileScreen() {
             
             <TouchableOpacity 
               style={styles.modalButton} 
-              onPress={() => {
+              onPress={async () => {
                 setAlarmSound('alarm');
                 setShowSoundModal(false);
+                await rescheduleAllAlarms();
               }}
             >
               <Text style={[styles.modalButtonText, alarmSound === 'alarm' && { fontWeight: '700' }]}>
-                Padrão
+                Padrão 01
               </Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.modalButton} 
-              onPress={() => {
+              onPress={async () => {
                 setAlarmSound('alarm_1');
                 setShowSoundModal(false);
+                await rescheduleAllAlarms();
               }}
             >
               <Text style={[styles.modalButtonText, alarmSound === 'alarm_1' && { fontWeight: '700' }]}>
-                Meu Toque
+                Padrão 02
               </Text>
             </TouchableOpacity>
 

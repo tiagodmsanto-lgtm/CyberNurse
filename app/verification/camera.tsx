@@ -15,10 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
+import notifee from '@notifee/react-native';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
 import { useDoseStore, useAppStore } from '../../src/stores';
 import { logMedicationTaken } from '../../src/services/analytics';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -46,11 +47,14 @@ type VerificationState = 'camera' | 'analyzing' | 'success' | 'failed';
 export default function CameraVerificationScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { doseId, isAlarm } = useLocalSearchParams<{ doseId: string, isAlarm: string }>();
+  const { doseId: rawDoseId, isAlarm: rawIsAlarm } = useLocalSearchParams<{ doseId: string, isAlarm: string }>();
+  const doseId = Array.isArray(rawDoseId) ? rawDoseId[0] : rawDoseId;
+  const isAlarm = Array.isArray(rawIsAlarm) ? rawIsAlarm[0] : rawIsAlarm;
   const [state, setState] = useState<VerificationState>('camera');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [doseData, setDoseData] = useState<any>(null);
+  const [failedReason, setFailedReason] = useState<string>('');
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
@@ -65,16 +69,58 @@ export default function CameraVerificationScreen() {
     : require('../../assets/sounds/alarm.ogg');
   const audioPlayer = useAudioPlayer(soundSource);
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasStartedRef = useRef(false);
+
   // Lógica para tocar o alarme
   useEffect(() => {
-    if (isAlarm === 'true' && state === 'camera') {
-      console.log('⏰ Iniciando som de alarme...');
-      audioPlayer.loop = true;
-      audioPlayer.play();
+    if (isAlarm === 'true') {
+      if (state !== 'success') {
+        if (!hasStartedRef.current) {
+          hasStartedRef.current = true;
+          console.log('⏰ Iniciando som de alarme persistente...');
+          
+          // Cancelar a notificação do Notifee para não sobrepor o áudio
+          if (doseId) {
+            notifee.cancelNotification(`dose-${doseId}`).catch(console.error);
+          }
+          
+          // Configurar áudio para tocar no modo silencioso e não ser interrompido
+          setAudioModeAsync({ 
+            playsInSilentMode: true, 
+            shouldPlayInBackground: true,
+            interruptionMode: 'mixWithOthers'
+          }).catch(console.error);
+          
+          audioPlayer.loop = true;
+          audioPlayer.play();
+
+          // Um loop de alarme de ~19.23s * 800 = ~15.384.000 ms (cerca de 4.2 horas)
+          timeoutRef.current = setTimeout(() => {
+            audioPlayer.pause();
+            console.log('⏹️ Alarme encerrado após atingir o limite de repetições (800x).');
+          }, 15384000);
+        } else {
+          // Garante que continue tocando caso o OS tenha pausado por causa do som da foto
+          if (!audioPlayer.playing) {
+            audioPlayer.play();
+          }
+        }
+      } else {
+        // Se for success
+        audioPlayer.pause();
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      }
     } else {
       audioPlayer.pause();
     }
-  }, [isAlarm, state]);
+  }, [isAlarm, state, audioPlayer, doseId]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (doseId) {
@@ -164,13 +210,16 @@ export default function CameraVerificationScreen() {
         requests: [
           {
             image: { content: photo.base64 },
-            features: [{ type: "LABEL_DETECTION", maxResults: 10 }]
+            features: [
+              { type: 'LABEL_DETECTION', maxResults: 10 },
+              { type: 'TEXT_DETECTION' }
+            ]
           }
         ]
       };
 
       try {
-        const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY;
+        const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY || 'AIzaSyCRTbkL8cbTpJ0CLG2WbmF13Cf2o08xwKA';
         
         if (!GOOGLE_VISION_API_KEY) {
           throw new Error('Vision API key is not configured');
@@ -197,30 +246,69 @@ export default function CameraVerificationScreen() {
         }
 
         const labels = data.responses[0].labelAnnotations || [];
-        const termosDetectados = labels.map((item: any) => item.description.toLowerCase());
-        
-        console.log("IA detectou:", termosDetectados);
+        const texts = data.responses[0].textAnnotations || [];
 
-        const palavrasValidas = ['pill', 'medicine', 'capsule', 'health', 'tablet', 'medical', 'pharma', 'blister pack', 'container'];
+        const termosDetectados = labels.map((item: any) => item.description.toLowerCase());
+        const textoDetectado = texts.length > 0 ? texts[0].description : '';
+        
+        console.log("IA detectou rótulos:", termosDetectados);
+        console.log("IA detectou texto bruto:", textoDetectado);
+
+        const palavrasValidas = ['pill', 'medicine', 'capsule', 'health', 'tablet', 'medical', 'pharma', 'blister pack', 'container', 'drug', 'prescription'];
         const ehRemedio = termosDetectados.some((termo: string) => palavrasValidas.includes(termo));
 
-        if (ehRemedio) {
+        // Normaliza textos para comparação ignorando acentos e maiúsculas
+        const normalizeText = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        
+        const expectedMedication = doseData?.medicationName ? normalizeText(doseData.medicationName) : '';
+        const normalizedDetectedText = normalizeText(textoDetectado);
+
+        // Quebra o nome do remédio em palavras e remove palavras muito curtas (ex: 'de', 'mg')
+        const medicationWords = expectedMedication.split(' ').filter((w: string) => w.length > 3);
+        
+        let hasCorrectSubstanceText = false;
+
+        if (expectedMedication && textoDetectado) {
+          if (normalizedDetectedText.includes(expectedMedication)) {
+            hasCorrectSubstanceText = true;
+          } else {
+            // Verifica se pelo menos alguma palavra forte do nome da substância aparece na embalagem
+            const hasMatch = medicationWords.some((word: string) => normalizedDetectedText.includes(word));
+            if (hasMatch) {
+              hasCorrectSubstanceText = true;
+            }
+          }
+        }
+
+        // A IA aprova se tiver lido o nome do remédio corretamente, 
+        // ou, em casos muito específicos, se a API tiver certeza que é um remédio e não puder ler (menos rigoroso, mas ajustável)
+        // Aqui o cliente quer rigor: deve bater a substância!
+        
+        if (hasCorrectSubstanceText) {
           try {
-            verifyDoseInDb(doseId, photo.uri, 0.94, 'ai');
-            useDoseStore.getState().verifyDose(doseId, photo.uri, 0.94, 'ai');
+            verifyDoseInDb(doseId, photo.uri, 0.98, 'ai');
+            useDoseStore.getState().verifyDose(doseId, photo.uri, 0.98, 'ai');
             logMedicationTaken(doseId, true);
             setState('success');
+            setFailedReason('');
           } catch (e) {
             console.error('Failed to update dose in database:', e);
             Alert.alert(t('camera.alerts.error'), t('camera.alerts.registerError'));
             setState('camera');
           }
         } else {
+          // Lógica de falha com razão específica
           setState('failed');
           setAttempts(prev => prev + 1);
+          
+          if (ehRemedio) {
+            setFailedReason(`A IA reconheceu um medicamento, mas não encontrou a substância "${doseData?.medicationName}" no rótulo. Aponte para o nome legível.`);
+          } else {
+            setFailedReason('A foto não parece conter nenhuma embalagem ou cartela de medicamento reconhecível.');
+          }
         }
       } catch (e) {
-        console.error('Vision API error:', e);
+        console.warn('Vision API error:', e);
         // Fallback to random if API fails (e.g. network error)
         const isSuccess = Math.random() > 0.3;
         if (isSuccess) {
@@ -410,7 +498,7 @@ export default function CameraVerificationScreen() {
             </View>
             <Text style={styles.failedTitle}>{t('camera.failedTitle')}</Text>
             <Text style={styles.failedSubtitle}>
-              Não foi possível confirmar a medicação na foto.{'\n'}
+              {failedReason || 'Não foi possível confirmar a medicação na foto.'}{'\n\n'}
               Tentativa {attempts} de 3
             </Text>
           </View>
