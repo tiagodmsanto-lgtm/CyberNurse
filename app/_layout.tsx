@@ -2,7 +2,7 @@ import { useFonts } from 'expo-font';
 import { Stack, usePathname, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, useRef } from 'react';
-import { StatusBar, View, Platform } from 'react-native';
+import { StatusBar, View, Platform, AppState } from 'react-native';
 import 'react-native-reanimated';
 import { PaperProvider } from 'react-native-paper';
 import { PaperTheme } from '../src/theme';
@@ -77,12 +77,12 @@ export default function RootLayout() {
     logCrashMessage('App RootLayout mounted and Database init started');
 
     // Initialize RevenueCat
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    if (Platform.OS === 'ios') {
-      Purchases.configure({ apiKey: 'YOUR_REVENUECAT_IOS_API_KEY_HERE' });
-    } else if (Platform.OS === 'android') {
-      Purchases.configure({ apiKey: 'YOUR_REVENUECAT_ANDROID_API_KEY_HERE' });
-    }
+    // Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    // if (Platform.OS === 'ios') {
+    //   Purchases.configure({ apiKey: 'YOUR_REVENUECAT_IOS_API_KEY_HERE' });
+    // } else if (Platform.OS === 'android') {
+    //   Purchases.configure({ apiKey: 'YOUR_REVENUECAT_ANDROID_API_KEY_HERE' });
+    // }
 
     // Check Premium status
     const checkSubscription = async () => {
@@ -186,9 +186,32 @@ function RootLayoutNav() {
       }
     });
 
+    // Cão de Guarda: Verifica se o usuário saiu do app sem verificar a dose
+    const appStateSubscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        console.log('App em background/inactive! Verificando doses atrasadas...');
+        try {
+          // Import dynamic para evitar ciclos ou inicialização precoce antes do sqlite estar pronto
+          const { getOverdueDoses } = require('../src/services/medicationService');
+          const { scheduleDoseAlarm } = require('../src/services/notificationService');
+          
+          const overdueDoses = getOverdueDoses();
+          if (overdueDoses.length > 0) {
+            console.log(`⚠️ Foram encontradas ${overdueDoses.length} doses atrasadas não validadas! Armando armadilha de 1 minuto...`);
+            for (const dose of overdueDoses) {
+              await scheduleDoseAlarm(dose.id, dose.medicationName, Date.now() + 60000);
+            }
+          }
+        } catch (e) {
+          console.error('Erro no cão de guarda (AppState):', e);
+        }
+      }
+    });
+
     return () => {
       subscription.remove();
       unsubscribeNotifee();
+      appStateSubscription.remove();
     };
   }, [pathname, isLoaded, show, isPremium]);
 

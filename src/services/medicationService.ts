@@ -336,6 +336,20 @@ export function getDoseWithMedicationById(doseId: string): DoseWithMedication | 
   return row || null;
 }
 
+export function getOverdueDoses(): DoseWithMedication[] {
+  const db = getDatabase();
+  const now = Date.now();
+  const rows = db.getAllSync<any>(
+    `SELECT d.*, m.name as medicationName, m.dosage as dosage, m.color as color, m.form as form
+     FROM doses d
+     JOIN medications m ON d.medicationId = m.id
+     WHERE d.status = 'pending' AND d.scheduledAt <= ? AND m.isActive = 1
+     ORDER BY d.scheduledAt ASC`,
+    [now]
+  );
+  return rows;
+}
+
 export function generateDosesForDay(date: Date): void {
   const db = getDatabase();
   const medications = getAllMedications();

@@ -110,3 +110,27 @@ export async function cancelDoseAlarm(doseId: string) {
     console.error('Failed to cancel dose alarm:', error);
   }
 }
+
+// Handler global para capturar quando a notificação é descartada (swiped away)
+notifee.onBackgroundEvent(async ({ type, detail }) => {
+  const { EventType } = require('@notifee/react-native');
+  if (type === EventType.DISMISSED && detail.notification?.data?.isAlarm) {
+    console.log('Notificação descartada pelo usuário! Iniciando verificação de pendência...');
+    const doseId = detail.notification.data.doseId as string;
+    if (doseId) {
+      try {
+        const { getDoseWithMedicationById } = require('./medicationService');
+        const dose = getDoseWithMedicationById(doseId);
+        
+        // Se a dose ainda está pending, ressuscitamos o alarme para daqui a 1 minuto!
+        if (dose && dose.status === 'pending') {
+          console.log(`A dose ${doseId} ainda está pendente! Reagendando alarme para +1 min...`);
+          // Reagenda para 1 minuto no futuro
+          await scheduleDoseAlarm(doseId, dose.medicationName, Date.now() + 60000);
+        }
+      } catch (e) {
+        console.error('Erro ao verificar dose descartada no background:', e);
+      }
+    }
+  }
+});

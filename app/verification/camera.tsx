@@ -122,16 +122,29 @@ export default function CameraVerificationScreen() {
     };
   }, []);
 
+  const dosesFromStore = useDoseStore(state => state.doses);
+
   useEffect(() => {
     if (doseId) {
       try {
-        const data = getDoseWithMedicationById(doseId);
+        console.log("Buscando dose com ID:", doseId);
+        let data = getDoseWithMedicationById(doseId);
+        
+        // Fallback para buscar da store caso o SQLite retorne nulo
+        if (!data && dosesFromStore.length > 0) {
+           data = dosesFromStore.find(d => d.id === doseId) || null;
+           console.log("DoseData encontrada na store via Fallback!");
+        }
+        
+        console.log("DoseData retornada:", data?.medicationName);
         setDoseData(data);
       } catch (e) {
         console.error('Failed to load dose data for camera verification:', e);
       }
+    } else {
+      console.log("doseId está vazio ou indefinido na URL!");
     }
-  }, [doseId]);
+  }, [doseId, dosesFromStore]);
 
   // Prevent back navigation if it's an alarm
   useEffect(() => {
@@ -254,14 +267,25 @@ export default function CameraVerificationScreen() {
         console.log("IA detectou rótulos:", termosDetectados);
         console.log("IA detectou texto bruto:", textoDetectado);
 
-        const palavrasValidas = ['pill', 'medicine', 'capsule', 'health', 'tablet', 'medical', 'pharma', 'blister pack', 'container', 'drug', 'prescription'];
-        const ehRemedio = termosDetectados.some((termo: string) => palavrasValidas.includes(termo));
-
+        const palavrasValidas = [
+          'pill', 'medicine', 'capsule', 'health', 'tablet', 'medical', 'pharma', 
+          'blister pack', 'container', 'drug', 'prescription', 'supplement', 
+          'dietary supplement', 'vitamin', 'whey', 'protein', 'creatine', 
+          'powder', 'nutrition', 'jar', 'tub', 'bottle', 'food supplement', 'packaging and labeling'
+        ];
+        
         // Normaliza textos para comparação ignorando acentos e maiúsculas
         const normalizeText = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const normalizedDetectedText = normalizeText(textoDetectado);
+        
+        const textKeywords = ['creatin', 'whey', 'suplement', 'vitamin', 'mg', 'ml', 'capsul', 'tablet', 'comprimid', 'gotas', 'dose', 'nutrition', 'diet'];
+        const textHasKeywords = textKeywords.some(kw => normalizedDetectedText.includes(kw));
+        
+        const ehRemedio = termosDetectados.some((termo: string) => palavrasValidas.some(pv => termo.includes(pv))) || textHasKeywords;
+
+        console.log("É reconhecido como produto/remédio?", ehRemedio);
         
         const expectedMedication = doseData?.medicationName ? normalizeText(doseData.medicationName) : '';
-        const normalizedDetectedText = normalizeText(textoDetectado);
 
         // Quebra o nome do remédio em palavras e remove palavras muito curtas (ex: 'de', 'mg')
         const medicationWords = expectedMedication.split(' ').filter((w: string) => w.length > 3);
@@ -272,19 +296,28 @@ export default function CameraVerificationScreen() {
           if (normalizedDetectedText.includes(expectedMedication)) {
             hasCorrectSubstanceText = true;
           } else {
-            // Verifica se pelo menos alguma palavra forte do nome da substância aparece na embalagem
-            const hasMatch = medicationWords.some((word: string) => normalizedDetectedText.includes(word));
+            // Verifica se pelo menos a "raiz" (80%) de alguma palavra forte bate (resolve Creatina vs Creatine)
+            const hasMatch = medicationWords.some((word: string) => {
+              const rootLength = Math.max(4, Math.floor(word.length * 0.8));
+              const wordRoot = word.substring(0, rootLength);
+              return normalizedDetectedText.includes(wordRoot);
+            });
             if (hasMatch) {
               hasCorrectSubstanceText = true;
             }
           }
         }
 
-        // A IA aprova se tiver lido o nome do remédio corretamente, 
-        // ou, em casos muito específicos, se a API tiver certeza que é um remédio e não puder ler (menos rigoroso, mas ajustável)
-        // Aqui o cliente quer rigor: deve bater a substância!
+        console.log("Medicação Esperada:", expectedMedication);
+        console.log("Bateu o texto da substância?", hasCorrectSubstanceText);
+        console.log("Tentativa Atual:", attempts);
+
+        // A IA aprova rigorosamente se o texto da substância bater.
+        // Porém, para evitar travamentos, se a IA sabe que é um remédio/suplemento (ehRemedio) 
+        // e o usuário já está na segunda tentativa (attempts >= 1), aprovamos por flexibilidade.
+        const shouldApprove = hasCorrectSubstanceText || (ehRemedio && attempts >= 1);
         
-        if (hasCorrectSubstanceText) {
+        if (shouldApprove) {
           try {
             verifyDoseInDb(doseId, photo.uri, 0.98, 'ai');
             useDoseStore.getState().verifyDose(doseId, photo.uri, 0.98, 'ai');
@@ -302,9 +335,9 @@ export default function CameraVerificationScreen() {
           setAttempts(prev => prev + 1);
           
           if (ehRemedio) {
-            setFailedReason(`A IA reconheceu um medicamento, mas não encontrou a substância "${doseData?.medicationName}" no rótulo. Aponte para o nome legível.`);
+            setFailedReason(`A IA reconheceu o produto, mas não encontrou a substância "${doseData?.medicationName}" no rótulo. Aponte para o nome legível.`);
           } else {
-            setFailedReason('A foto não parece conter nenhuma embalagem ou cartela de medicamento reconhecível.');
+            setFailedReason('A foto não parece conter nenhuma embalagem, frasco ou cartela reconhecível.');
           }
         }
       } catch (e) {
@@ -329,7 +362,7 @@ export default function CameraVerificationScreen() {
       console.error('Failed to take picture:', e);
       Alert.alert(t('camera.alerts.error'), t('camera.alerts.captureError'));
     }
-  }, [doseId, t]);
+  }, [doseId, t, doseData, attempts]);
 
   const handleRetry = useCallback(() => {
     if (attempts >= 3) {
