@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import notifee, { TimestampTrigger, TriggerType, AndroidImportance, AndroidCategory, AndroidVisibility } from '@notifee/react-native';
+import notifee, { TimestampTrigger, TriggerType, AndroidImportance, AndroidCategory, AndroidVisibility, AndroidFlags } from '@notifee/react-native';
+import { useAppStore } from '../stores/appStore';
 
 export async function requestNotificationPermissions() {
   const { status } = await Notifications.requestPermissionsAsync();
@@ -14,13 +15,26 @@ export async function requestNotificationPermissions() {
   }
 
   if (Platform.OS === 'android') {
+    // Canal com som padrão
     await notifee.createChannel({
-      id: 'alarms_v4',
+      id: 'alarms_v5',
       name: 'Alarme Contínuo (Tela Cheia)',
       importance: AndroidImportance.HIGH,
       vibration: true,
       vibrationPattern: [300, 500, 300, 500],
       lightColor: '#E53935',
+      sound: 'alarm',
+    });
+
+    // Canal com toque customizado (Toque 1)
+    await notifee.createChannel({
+      id: 'alarms_v5_custom_1',
+      name: 'Alarme Contínuo (Toque 1)',
+      importance: AndroidImportance.HIGH,
+      vibration: true,
+      vibrationPattern: [300, 500, 300, 500],
+      lightColor: '#E53935',
+      sound: 'alarm_1',
     });
   }
 
@@ -42,17 +56,24 @@ export async function scheduleDoseAlarm(doseId: string, medicationName: string, 
       timestamp: scheduledAt,
     };
 
+    const alarmSound = useAppStore.getState().alarmSound;
+    const channelId = alarmSound === 'alarm_1' ? 'alarms_v5_custom_1' : 'alarms_v5';
+
     await notifee.createTriggerNotification(
       {
         id: `dose-${doseId}`,
         title: 'ALERTA: Hora do seu medicamento! 💊',
         body: `É hora de tomar: ${medicationName}. Toque para desativar o alarme.`,
-        data: { doseId, isAlarm: true },
+        data: { doseId, isAlarm: 'true' },
         android: {
-          channelId: 'alarms_v4',
+          channelId: channelId,
           category: AndroidCategory.ALARM,
           importance: AndroidImportance.HIGH,
           visibility: AndroidVisibility.PUBLIC,
+          loopSound: true,
+          flags: [AndroidFlags.FLAG_INSISTENT],
+          ongoing: true,
+          autoCancel: false,
           // Isso acorda o celular e abre o app mesmo bloqueado!
           fullScreenAction: {
             id: 'default',
@@ -73,7 +94,10 @@ export async function scheduleDoseAlarm(doseId: string, medicationName: string, 
 
 export async function cancelDoseAlarm(doseId: string) {
   try {
-    await Notifications.cancelScheduledNotificationAsync(`dose-${doseId}`);
+    const notificationId = `dose-${doseId}`;
+    await Notifications.cancelScheduledNotificationAsync(notificationId);
+    await notifee.cancelTriggerNotification(notificationId);
+    await notifee.cancelNotification(notificationId);
     console.log(`Alarm cancelled for dose ${doseId}`);
   } catch (error) {
     console.error('Failed to cancel dose alarm:', error);

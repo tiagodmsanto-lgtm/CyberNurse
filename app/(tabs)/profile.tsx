@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { getAllMedications } from '../../src/services/medicationService';
 import { getDatabase } from '../../src/services/database';
 import { useUserProfileStore } from '../../src/stores/userProfileStore';
+import { useAppStore } from '../../src/stores/appStore';
 
 // ── Types ──────────────────────────────────────────────
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -49,6 +50,9 @@ export default function ProfileScreen() {
   const [adherenceRate, setAdherenceRate] = useState(87);
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   
+  const { alarmSound, setAlarmSound } = useAppStore();
+  const [showSoundModal, setShowSoundModal] = useState(false);
+  
   // ── Data ───────────────────────────────────────────────
   const SETTINGS_SECTIONS: SettingsSection[] = [
     {
@@ -56,7 +60,16 @@ export default function ProfileScreen() {
       items: [
         { icon: 'account-outline', title: t('profile.sections.appSettings.personalData'), onPress: () => router.push('/profile/personal-data') },
         { icon: 'bell-outline', title: t('profile.sections.appSettings.notifications') },
-
+        {
+          icon: 'music-note',
+          title: 'Som do Alarme',
+          trailing: (
+            <Text style={{ fontSize: 14, color: '#757575' }}>
+              {alarmSound === 'alarm' ? 'Padrão' : 'Toque 1'}
+            </Text>
+          ),
+          onPress: () => setShowSoundModal(true),
+        },
       ],
     },
     {
@@ -287,7 +300,45 @@ export default function ProfileScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
 
+      {/* Sound Modal */}
+      <Modal visible={showSoundModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Escolha o Som do Alarme</Text>
+            
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setAlarmSound('alarm');
+                setShowSoundModal(false);
+              }}
+            >
+              <Text style={[styles.modalButtonText, alarmSound === 'alarm' && { fontWeight: '700' }]}>
+                Padrão
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setAlarmSound('alarm_1');
+                setShowSoundModal(false);
+              }}
+            >
+              <Text style={[styles.modalButtonText, alarmSound === 'alarm_1' && { fontWeight: '700' }]}>
+                Meu Toque
+              </Text>
+            </TouchableOpacity>
 
+            <TouchableOpacity 
+              style={styles.modalCancelButton} 
+              onPress={() => setShowSoundModal(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );

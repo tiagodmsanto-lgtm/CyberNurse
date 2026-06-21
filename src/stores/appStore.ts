@@ -22,6 +22,9 @@ export interface AppState {
   /** Whether the database has been initialised this session */
   isDbReady: boolean;
 
+  /** The selected alarm sound */
+  alarmSound: 'alarm' | 'alarm_1';
+
   // ── Actions ──
 
   /** Mark onboarding as completed */
@@ -39,6 +42,9 @@ export interface AppState {
   /** Mark the database as initialised */
   setDbReady: (value: boolean) => void;
 
+  /** Set the selected alarm sound */
+  setAlarmSound: (sound: 'alarm' | 'alarm_1') => void;
+
   /** Bulk-hydrate app state (e.g. from AsyncStorage on launch) */
   hydrate: (partial: Partial<AppState>) => void;
 }
@@ -51,6 +57,7 @@ export const useAppStore = create<AppState>((set) => ({
   userPhoto: null,
   notificationsEnabled: false,
   isDbReady: false,
+  alarmSound: 'alarm',
 
   setOnboarded: (value) => set({ isOnboarded: value }),
 
@@ -61,6 +68,8 @@ export const useAppStore = create<AppState>((set) => ({
   setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
 
   setDbReady: (value) => set({ isDbReady: value }),
+
+  setAlarmSound: (sound) => set({ alarmSound: sound }),
 
   hydrate: (partial) => set(partial),
 }));

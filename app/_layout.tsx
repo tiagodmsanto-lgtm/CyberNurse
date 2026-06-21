@@ -23,6 +23,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -151,7 +153,7 @@ function RootLayoutNav() {
       if (data?.doseId) {
         router.push({
           pathname: '/verification/camera',
-          params: { doseId: data.doseId, isAlarm: data.isAlarm ? 'true' : 'false' }
+          params: { doseId: String(data.doseId), isAlarm: data.isAlarm ? 'true' : 'false' }
         });
       }
     });
@@ -163,7 +165,7 @@ function RootLayoutNav() {
         if (data?.doseId) {
           router.push({
             pathname: '/verification/camera',
-            params: { doseId: data.doseId, isAlarm: 'true' }
+            params: { doseId: String(data.doseId), isAlarm: 'true' }
           });
         }
       }
@@ -177,7 +179,7 @@ function RootLayoutNav() {
           setTimeout(() => {
             router.push({
               pathname: '/verification/camera',
-              params: { doseId: data.doseId, isAlarm: 'true' }
+              params: { doseId: String(data.doseId), isAlarm: 'true' }
             });
           }, 500); // pequeno atraso para garantir que o root layout montou
         }

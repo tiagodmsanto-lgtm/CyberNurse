@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignSelf: 'flex-start',
-    padding: Spacing.s,
+    padding: Spacing.sm,
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
     marginBottom: Spacing.xl,
@@ -184,21 +184,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 215, 0, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.l,
+    marginBottom: Spacing.lg,
     borderWidth: 2,
     borderColor: '#FFD700',
   },
   title: {
     ...Typography.h1,
     color: C.white,
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.body,
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
-    paddingHorizontal: Spacing.m,
+    paddingHorizontal: Spacing.md,
   },
   benefitsContainer: {
     marginBottom: Spacing.xxl,
@@ -206,9 +206,9 @@ const styles = StyleSheet.create({
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.l,
+    marginBottom: Spacing.lg,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: Spacing.m,
+    padding: Spacing.md,
     borderRadius: 16,
   },
   benefitIcon: {
@@ -218,13 +218,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.m,
+    marginRight: Spacing.md,
   },
   benefitText: {
     flex: 1,
   },
   benefitTitle: {
-    ...Typography.subtitle,
+    ...Typography.h4,
     color: C.white,
     marginBottom: 4,
   },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   },
   purchaseButton: {
     backgroundColor: C.white,
-    paddingVertical: Spacing.l,
+    paddingVertical: Spacing.lg,
     borderRadius: 30,
     alignItems: 'center',
     shadowColor: '#000',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   purchaseButtonText: {
-    ...Typography.subtitle,
+    ...Typography.h4,
     color: C.primary,
     fontWeight: '700',
   },
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   restoreButton: {
     alignItems: 'center',
-    paddingVertical: Spacing.m,
+    paddingVertical: Spacing.md,
   },
   restoreButtonText: {
     ...Typography.body,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   placeholderBox: {
     backgroundColor: 'rgba(0,0,0,0.2)',
-    padding: Spacing.l,
+    padding: Spacing.lg,
     borderRadius: 16,
     alignItems: 'center',
   },
@@ -276,16 +276,16 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.md,
   },
   devBypassButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: Spacing.m,
+    paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: 20,
   },
   devBypassText: {
-    ...Typography.subtitle,
+    ...Typography.h4,
     color: C.white,
   }
 });

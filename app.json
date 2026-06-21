@@ -30,7 +30,9 @@
         "READ_CALENDAR",
         "WRITE_CALENDAR",
         "WAKE_LOCK",
-        "FOREGROUND_SERVICE"
+        "FOREGROUND_SERVICE",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_FULL_SCREEN_INTENT"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -70,7 +72,7 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#E53935",
-          "sounds": []
+          "sounds": ["./assets/sounds/alarm.ogg", "./assets/sounds/alarm_1.mp3"]
         }
       ],
       [

@@ -16,7 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
 import { getDoseWithMedicationById, verifyDoseInDb } from '../../src/services/medicationService';
-import { useDoseStore } from '../../src/stores';
+import { useDoseStore, useAppStore } from '../../src/stores';
 import { logMedicationTaken } from '../../src/services/analytics';
 import { useAudioPlayer } from 'expo-audio';
 
@@ -59,7 +59,11 @@ export default function CameraVerificationScreen() {
   const cameraRef = useRef<CameraView>(null);
   
   // Hook do expo-audio
-  const audioPlayer = useAudioPlayer(require('../../assets/sounds/alarm.ogg'));
+  const { alarmSound } = useAppStore();
+  const soundSource = alarmSound === 'alarm_1' 
+    ? require('../../assets/sounds/alarm_1.mp3')
+    : require('../../assets/sounds/alarm.ogg');
+  const audioPlayer = useAudioPlayer(soundSource);
 
   // Lógica para tocar o alarme
   useEffect(() => {
@@ -156,14 +160,6 @@ export default function CameraVerificationScreen() {
       setCapturedImage(photo.uri);
       setState('analyzing');
 
-      const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY;
-      
-      if (!GOOGLE_VISION_API_KEY) {
-        throw new Error('Vision API key is not configured');
-      }
-
-      const url = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
-
       const payload = {
         requests: [
           {
@@ -174,6 +170,14 @@ export default function CameraVerificationScreen() {
       };
 
       try {
+        const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY;
+        
+        if (!GOOGLE_VISION_API_KEY) {
+          throw new Error('Vision API key is not configured');
+        }
+
+        const url = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
+
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
