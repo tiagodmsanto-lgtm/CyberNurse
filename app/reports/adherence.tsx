@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { PieChart, BarChart } from 'react-native-chart-kit';
 import { getMedicationAdherence, getMockDietAdherence, getMockHydration } from '../../src/services/reportsService';
@@ -29,13 +29,16 @@ const chartConfig = {
 export default function AdherenceReportScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { medicationId } = useLocalSearchParams();
 
   const [medData, setMedData] = useState<any[]>([]);
   const [dietData, setDietData] = useState<any>(null);
   const [hydroData, setHydroData] = useState<any>(null);
 
   useEffect(() => {
-    const med = getMedicationAdherence();
+    // If medicationId is 'all', we pass undefined to get the global adherence
+    const medIdToFetch = (medicationId && medicationId !== 'all') ? String(medicationId) : undefined;
+    const med = getMedicationAdherence(medIdToFetch);
     setMedData([
       { name: t('reports.adherence.taken'), count: med.taken, color: '#4CAF50', legendFontColor: '#7F7F7F', legendFontSize: 14 },
       { name: t('reports.adherence.missed'), count: med.missed, color: '#F44336', legendFontColor: '#7F7F7F', legendFontSize: 14 },

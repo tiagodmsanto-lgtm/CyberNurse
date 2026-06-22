@@ -1,8 +1,17 @@
 import { getDatabase, generateId } from './database';
 
-export function getMedicationAdherence() {
+export function getMedicationAdherence(medicationId?: string) {
   const db = getDatabase();
-  const allDoses = db.getAllSync<{ status: string }>('SELECT status FROM doses');
+  let allDoses;
+  
+  if (medicationId) {
+    allDoses = db.getAllSync<{ status: string }>(
+      'SELECT status FROM doses WHERE medicationId = ?',
+      [medicationId]
+    );
+  } else {
+    allDoses = db.getAllSync<{ status: string }>('SELECT status FROM doses');
+  }
   
   if (allDoses.length === 0) {
     return { taken: 85, missed: 15, total: 100 }; // Fake data for empty states

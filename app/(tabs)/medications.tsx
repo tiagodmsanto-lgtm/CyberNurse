@@ -12,6 +12,7 @@ import {
   RefreshControl,
   ListRenderItemInfo,
   InteractionManager,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import { Spacing, BorderRadius } from '../../src/theme/spacing';
 import { MedicationCard } from '../../src/components/medication/MedicationCard';
 import type { Medication, MedicationForm } from '../../src/models/Medication';
 import { useMedicationStore, useStockStore } from '../../src/stores';
+import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { getAllMedications, getAllStock } from '../../src/services/medicationService';
 import { useTranslation } from 'react-i18next';
 
@@ -50,6 +52,7 @@ export default function MedicationsScreen() {
 
   const medications = useMedicationStore((state) => state.medications);
   const stocks = useStockStore((state) => state.stocks);
+  const isPremium = useSubscriptionStore((state) => state.isPremium);
 
   const fetchMedications = useCallback(() => {
     try {
@@ -113,8 +116,19 @@ export default function MedicationsScreen() {
   }, []);
 
   const handleFabPress = useCallback(() => {
+    if (!isPremium && medications.length >= 5) {
+      Alert.alert(
+        t('medications.premiumLimitTitle', 'Limite Atingido'),
+        t('medications.premiumLimitMessage', 'O plano gratuito permite adicionar até 5 medicações. Assine o Premium para liberar o limite!'),
+        [
+          { text: t('common.cancel', 'Cancelar'), style: 'cancel' },
+          { text: t('common.upgrade', 'Ver Premium'), onPress: () => router.push('/premium/paywall' as any) }
+        ]
+      );
+      return;
+    }
     router.push('/medication/add');
-  }, []);
+  }, [isPremium, medications.length, t]);
 
   // Filtered + searched medications
   const filteredMedications = useMemo(() => {

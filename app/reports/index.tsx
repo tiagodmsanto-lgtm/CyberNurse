@@ -13,6 +13,9 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
+import { useMedicationStore } from '../../src/stores';
+import { getMedicationAdherence } from '../../src/services/reportsService';
 
 const C = {
   primary: '#E53935',
@@ -26,9 +29,19 @@ const C = {
 export default function ReportsDashboardScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  
+  const isPremium = useSubscriptionStore(state => state.isPremium);
+  const medications = useMedicationStore(state => state.medications);
+  
+  const [selectedMedId, setSelectedMedId] = React.useState<string>(
+    isPremium ? 'all' : (medications.length > 0 ? medications[0].id : 'all')
+  );
 
   const handleExportPDF = async () => {
     try {
+      const adherence = getMedicationAdherence(selectedMedId === 'all' ? undefined : selectedMedId);
+      const medName = selectedMedId === 'all' ? 'Visão Geral (Todas as Medicações)' : medications.find(m => m.id === selectedMedId)?.name || 'Medicação';
+      
       const html = `
         <html>
           <head>
@@ -42,13 +55,14 @@ export default function ReportsDashboardScreen() {
           </head>
           <body>
             <h1>Relatório Clínico - Cyber Nurse</h1>
+            <p><strong>Contexto:</strong> ${medName}</p>
             <p><strong>Data de Geração:</strong> ${new Date().toLocaleDateString()}</p>
             
             <div class="card">
               <h2>1. Adesão ao Protocolo</h2>
-              <p>Medicação Tomada: 85%</p>
-              <p>Esquecimentos: 15%</p>
-              <p>Refeições Livres na Semana: 3</p>
+              <p>Medicação Tomada: ${adherence.taken} doses</p>
+              <p>Esquecimentos: ${adherence.missed} doses</p>
+              <p>Taxa de Adesão: ${Math.round((adherence.taken / adherence.total) * 100)}%</p>
             </div>
 
             <div class="card">
@@ -120,6 +134,40 @@ export default function ReportsDashboardScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Medication Selector */}
+        <View style={styles.selectorContainer}>
+          <Text style={styles.selectorTitle}>Contexto do Relatório:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
+            {/* All Medications Chip */}
+            <TouchableOpacity
+              style={[styles.chip, selectedMedId === 'all' && styles.chipActive]}
+              onPress={() => {
+                if (isPremium) setSelectedMedId('all');
+                else router.push('/premium/paywall' as any);
+              }}
+            >
+              {!isPremium && <MaterialCommunityIcons name="lock" size={14} color={C.textSecondary} style={{marginRight: 4}} />}
+              <Text style={[styles.chipText, selectedMedId === 'all' && styles.chipTextActive]}>
+                Visão Geral
+              </Text>
+            </TouchableOpacity>
+
+            {/* Individual Medications */}
+            {medications.map(med => (
+              <TouchableOpacity
+                key={med.id}
+                style={[styles.chip, selectedMedId === med.id && styles.chipActive]}
+                onPress={() => setSelectedMedId(med.id)}
+              >
+                <Text style={[styles.chipText, selectedMedId === med.id && styles.chipTextActive]}>
+                  {med.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         <View style={styles.heroCard}>
           <MaterialCommunityIcons name="chart-pie" size={48} color={C.white} />
           <Text style={styles.heroTitle}>Sua Evolução em Dados</Text>
@@ -137,7 +185,7 @@ export default function ReportsDashboardScreen() {
             key={idx}
             style={styles.card}
             activeOpacity={0.8}
-            onPress={() => router.push(card.route as any)}
+            onPress={() => router.push(`${card.route}?medicationId=${selectedMedId}` as any)}
           >
             <View style={[styles.iconBox, { backgroundColor: card.color + '15' }]}>
               <MaterialCommunityIcons name={card.icon as any} size={28} color={card.color} />
@@ -211,4 +259,20 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: C.textPrimary, marginBottom: 4 },
   cardDesc: { fontSize: 13, color: C.textSecondary, lineHeight: 18 },
+  selectorContainer: { marginBottom: 20 },
+  selectorTitle: { fontSize: 14, fontWeight: '700', color: C.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
+  selectorScroll: { gap: 8, paddingBottom: 4 },
+  chip: { 
+    flexDirection: 'row',
+    backgroundColor: C.white, 
+    borderWidth: 1, 
+    borderColor: C.border, 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20,
+    alignItems: 'center'
+  },
+  chipActive: { backgroundColor: C.primary, borderColor: C.primary },
+  chipText: { fontSize: 14, fontWeight: '600', color: C.textSecondary },
+  chipTextActive: { color: C.white },
 });

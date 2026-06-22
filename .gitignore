@@ -45,3 +45,6 @@ google-services.json
 
 # Variáveis de ambiente secretas
 .env
+
+# Arquivo ignorado por conter chave da API hardcoded
+app/verification/camera.tsx

@@ -85,8 +85,8 @@ export default function ProfileScreen() {
       title: t('profile.sections.app.title'),
       items: [
         { icon: 'information-outline', title: t('profile.sections.app.about'), onPress: () => router.push('/profile/about') },
-        { icon: 'file-document-outline', title: t('profile.sections.app.terms') },
-        { icon: 'shield-check-outline', title: t('profile.sections.app.privacy') },
+        { icon: 'file-document-outline', title: t('profile.sections.app.terms'), onPress: () => router.push('/profile/terms') },
+        { icon: 'shield-check-outline', title: t('profile.sections.app.privacy'), onPress: () => router.push('/profile/privacy') },
         {
           icon: 'cellphone',
           title: t('profile.sections.app.version'),
