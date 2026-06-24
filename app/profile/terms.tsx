@@ -33,30 +33,40 @@ export default function TermsScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>1. Propósito do Aplicativo</Text>
           <Text style={styles.cardText}>
-            O CyberNurse é uma ferramenta estritamente desenvolvida para funcionar como auxiliar na manutenção de protocolos medicamentosos e nutricionais. Nosso objetivo central é proporcionar maior facilidade no dia a dia do usuário, garantindo uma maior aderência aos tratamentos de forma geral.
+            O CyberNurse é uma ferramenta de auxílio na manutenção de tratamentos medicamentosos e rotinas de saúde. Nosso objetivo é proporcionar organização e lembrar o paciente de suas tarefas diárias.
           </Text>
           <Text style={[styles.cardText, styles.highlightText]}>
-            Quaisquer outros usos deste aplicativo, incluindo a tentativa de utilizá-lo como substituto de orientações médicas profissionais, diagnósticos ou tratamentos, violam expressamente nossa política de uso.
+            IMPORTANTE: O CyberNurse NÃO substitui orientações médicas profissionais, diagnósticos ou tratamentos. A responsabilidade por seguir as prescrições médicas corretas é inteiramente do usuário.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>2. Isenção de Responsabilidade Médica</Text>
+          <Text style={styles.cardTitle}>2. Cadastro e Dados Obrigatórios (LGPD)</Text>
           <Text style={styles.cardText}>
-            O aplicativo não fornece aconselhamento médico. Sempre busque o conselho de seu médico ou outro profissional de saúde qualificado para quaisquer dúvidas que você possa ter a respeito de uma condição médica. O CyberNurse serve apenas para ajudá-lo a organizar sua rotina de cuidados previamente estabelecida pelo seu profissional de saúde.
+            Para utilizar o aplicativo de forma segura e para que o sistema funcione corretamente, exigimos a criação de uma conta (Autenticação) e o preenchimento de um Perfil de Saúde, contemplando: Identificação, Dados Antropométricos e Dados Clínicos.
+          </Text>
+          <Text style={styles.cardText}>
+            A coleta dessas informações obedece estritamente à <Text style={{fontWeight: 'bold'}}>Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018)</Text>. Você tem o direito de solicitar a exclusão de seus dados a qualquer momento através do botão "Sair e Apagar Tudo" no aplicativo.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>3. Uso Aceitável</Text>
+          <Text style={styles.cardTitle}>3. Contas e Backup em Nuvem</Text>
           <Text style={styles.cardText}>
-            O usuário se compromete a inserir dados verdadeiros referentes aos seus próprios tratamentos (ou dos quais é responsável legal) e não utilizar a plataforma para fins ilícitos, engenharia reversa ou sobrecarga intencional dos sistemas.
+            Com a criação da sua conta, o CyberNurse realizará backups seguros (cópias de segurança) criptografados na nuvem para evitar perda de dados. Você é responsável por manter o sigilo de suas credenciais de acesso (e-mail e senha).
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>4. Uso Aceitável</Text>
+          <Text style={styles.cardText}>
+            O usuário se compromete a inserir dados verdadeiros referentes aos seus próprios tratamentos (ou dos quais é responsável legal) e a não utilizar a plataforma para fins ilícitos, engenharia reversa ou subversão dos sistemas de segurança.
           </Text>
         </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Ao continuar utilizando o CyberNurse, você declara ter lido, compreendido e concordado com todos os termos descritos acima.
+            Ao continuar utilizando o CyberNurse, você declara ter lido, compreendido e aceitado integralmente estes Termos de Uso e a nossa Política de Privacidade.
           </Text>
         </View>
 

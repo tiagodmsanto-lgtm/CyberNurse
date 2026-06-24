@@ -7,7 +7,7 @@ import analytics from '@react-native-firebase/analytics';
  */
 export const logScreenView = async (screenName: string, screenClass?: string) => {
   try {
-    await analytics().logScreenView({
+    await analytics().logEvent('screen_view', {
       screen_name: screenName,
       screen_class: screenClass || screenName,
     });

@@ -164,7 +164,7 @@ export default function TodayScreen() {
               onPress={() => {}}
               onTakePhoto={() => {
                 router.push({
-                  pathname: '/verification/camera',
+                  pathname: nextDose.form === 'medicao' ? '/verification/measurement' : '/verification/camera',
                   params: { doseId: nextDose.id },
                 });
               }}
@@ -197,7 +197,7 @@ export default function TodayScreen() {
                 onPress={() => {}}
                 onTakePhoto={() => {
                   router.push({
-                    pathname: '/verification/camera',
+                    pathname: dose.form === 'medicao' ? '/verification/measurement' : '/verification/camera',
                     params: { doseId: dose.id },
                   });
                 }}

@@ -20,6 +20,7 @@ import { getAllMedications, rescheduleAllAlarms } from '../../src/services/medic
 import { getDatabase } from '../../src/services/database';
 import { useUserProfileStore } from '../../src/stores/userProfileStore';
 import { useAppStore } from '../../src/stores/appStore';
+import auth from '@react-native-firebase/auth';
 
 // ── Types ──────────────────────────────────────────────
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -52,6 +53,35 @@ export default function ProfileScreen() {
   
   const { alarmSound, setAlarmSound } = useAppStore();
   const [showSoundModal, setShowSoundModal] = useState(false);
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair da Conta',
+      'Tem certeza que deseja desconectar? Todos os dados médicos salvos apenas neste celular serão APAGADOS por segurança.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair e Apagar Tudo', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              useUserProfileStore.getState().clearPersonalData();
+              const db = getDatabase();
+              db.runSync('DELETE FROM medications');
+              db.runSync('DELETE FROM schedules');
+              db.runSync('DELETE FROM doses');
+              db.runSync('DELETE FROM stock');
+              await auth().signOut();
+              router.replace('/auth/login');
+            } catch (error) {
+              console.error('Erro ao sair:', error);
+              Alert.alert('Erro', 'Ocorreu um erro ao tentar sair da conta.');
+            }
+          }
+        }
+      ]
+    );
+  };
   
   // ── Data ───────────────────────────────────────────────
   const SETTINGS_SECTIONS: SettingsSection[] = [
@@ -59,7 +89,6 @@ export default function ProfileScreen() {
       title: t('profile.sections.appSettings.title'),
       items: [
         { icon: 'account-outline', title: t('profile.sections.appSettings.personalData'), onPress: () => router.push('/profile/personal-data') },
-        { icon: 'bell-outline', title: t('profile.sections.appSettings.notifications') },
         {
           icon: 'music-note',
           title: 'Som do Alarme',
@@ -78,7 +107,6 @@ export default function ProfileScreen() {
       items: [
         { icon: 'account-group-outline', title: t('supportNetwork.title'), onPress: () => router.push('/profile/support-network') },
         { icon: 'chart-line', title: t('profile.sections.health.reports'), onPress: () => router.push('/reports') },
-        { icon: 'download-outline', title: t('profile.sections.health.export') },
       ],
     },
     {
@@ -111,6 +139,7 @@ export default function ProfileScreen() {
           title: t('profile.sections.account.logout'),
           color: '#D32F2F',
           noChevron: true,
+          onPress: handleLogout,
         },
       ],
     },

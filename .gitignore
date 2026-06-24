@@ -42,9 +42,10 @@ yarn-error.*
 
 # Firebase config para o Expo
 google-services.json
+GoogleService-Info.plist
 
-# Vari·veis de ambiente secretas
+# Vari√°veis de ambiente secretas
 .env
 
-# Arquivo ignorado por conter chave da API hardcoded
-app/verification/camera.tsx
+
+

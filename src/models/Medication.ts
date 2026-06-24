@@ -9,7 +9,7 @@
 export interface Medication {
   id: string;
   name: string;
-  category: 'Medicamento' | 'Suplemento' | 'Vitamina';
+  category: 'Medicamento' | 'Suplemento' | 'Vitamina' | 'Métrica';
   dosage: string; // e.g. '500mg'
   form: MedicationForm;
   color: string; // hex color for UI chip / card accent
@@ -28,6 +28,7 @@ export type MedicationForm =
   | 'injecao'
   | 'pomada'
   | 'gotas'
+  | 'medicao'
   | 'outro';
 
 /** Human-readable labels (pt-BR) for each form */
@@ -38,6 +39,7 @@ export const MEDICATION_FORM_LABELS: Record<MedicationForm, string> = {
   injecao: 'Injeção',
   pomada: 'Pomada',
   gotas: 'Gotas',
+  medicao: 'Medição',
   outro: 'Outro',
 };
 
@@ -52,5 +54,6 @@ export const MEDICATION_FORM_ICONS: Record<MedicationForm, string> = {
   injecao: 'needle',
   pomada: 'medical-bag',
   gotas: 'eyedropper',
+  medicao: 'heart-pulse',
   outro: 'medical-bag',
 };

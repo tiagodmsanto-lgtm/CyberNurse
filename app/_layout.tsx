@@ -17,6 +17,7 @@ import notifee, { EventType } from '@notifee/react-native';
 import { useSubscriptionStore } from '../src/stores/subscriptionStore';
 import '../src/i18n';
 import { requestNotificationPermissions } from '../src/services/notificationService';
+import { registerBackgroundBackup } from '../src/services/backgroundSync';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -53,6 +54,7 @@ export default function RootLayout() {
       try {
         await initDatabase();
         console.log('Database initialized successfully');
+        await registerBackgroundBackup();
       } catch (e) {
         console.error('Failed to initialize database:', e);
       } finally {
@@ -87,10 +89,14 @@ export default function RootLayout() {
     // Check Premium status
     const checkSubscription = async () => {
       try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        // Assume the entitlement is named "premium" in RevenueCat
-        const hasPremium = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
-        useSubscriptionStore.getState().setPremium(hasPremium);
+        if (await Purchases.isConfigured()) {
+          const customerInfo = await Purchases.getCustomerInfo();
+          // Assume the entitlement is named "premium" in RevenueCat
+          const hasPremium = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
+          useSubscriptionStore.getState().setPremium(hasPremium);
+        } else {
+          console.log('RevenueCat não configurado ainda. Pulando check de assinatura.');
+        }
       } catch (e) {
         console.error('Failed to get RevenueCat customer info:', e);
       }
@@ -151,10 +157,20 @@ function RootLayoutNav() {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       if (data?.doseId) {
-        router.push({
-          pathname: '/verification/camera',
-          params: { doseId: String(data.doseId), isAlarm: data.isAlarm ? 'true' : 'false' }
-        });
+        try {
+          const { getDoseWithMedicationById } = require('../src/services/medicationService');
+          const dose = getDoseWithMedicationById(String(data.doseId));
+          const isMetric = dose?.form === 'medicao';
+          router.push({
+            pathname: isMetric ? '/verification/measurement' : '/verification/camera',
+            params: { doseId: String(data.doseId), isAlarm: data.isAlarm ? 'true' : 'false' }
+          });
+        } catch (e) {
+          router.push({
+            pathname: '/verification/camera',
+            params: { doseId: String(data.doseId), isAlarm: data.isAlarm ? 'true' : 'false' }
+          });
+        }
       }
     });
 
@@ -163,10 +179,20 @@ function RootLayoutNav() {
       if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
         const data = detail.notification?.data;
         if (data?.doseId) {
-          router.push({
-            pathname: '/verification/camera',
-            params: { doseId: String(data.doseId), isAlarm: 'true' }
-          });
+          try {
+            const { getDoseWithMedicationById } = require('../src/services/medicationService');
+            const dose = getDoseWithMedicationById(String(data.doseId));
+            const isMetric = dose?.form === 'medicao';
+            router.push({
+              pathname: isMetric ? '/verification/measurement' : '/verification/camera',
+              params: { doseId: String(data.doseId), isAlarm: 'true' }
+            });
+          } catch (e) {
+            router.push({
+              pathname: '/verification/camera',
+              params: { doseId: String(data.doseId), isAlarm: 'true' }
+            });
+          }
         }
       }
     });
@@ -177,10 +203,20 @@ function RootLayoutNav() {
         const data = initialNotification.notification.data;
         if (data?.doseId) {
           setTimeout(() => {
-            router.push({
-              pathname: '/verification/camera',
-              params: { doseId: String(data.doseId), isAlarm: 'true' }
-            });
+            try {
+              const { getDoseWithMedicationById } = require('../src/services/medicationService');
+              const dose = getDoseWithMedicationById(String(data.doseId));
+              const isMetric = dose?.form === 'medicao';
+              router.push({
+                pathname: isMetric ? '/verification/measurement' : '/verification/camera',
+                params: { doseId: String(data.doseId), isAlarm: 'true' }
+              });
+            } catch (e) {
+              router.push({
+                pathname: '/verification/camera',
+                params: { doseId: String(data.doseId), isAlarm: 'true' }
+              });
+            }
           }, 500); // pequeno atraso para garantir que o root layout montou
         }
       }

@@ -40,6 +40,7 @@ export interface DoseState {
     photoUri: string,
     score: number,
     method: VerificationMethod,
+    notes?: string
   ) => void;
 
   /** Toggle loading state */
@@ -92,6 +93,7 @@ export const useDoseStore = create<DoseState>((set, get) => ({
               verificationPhoto: photoUri,
               verificationScore: score,
               verificationMethod: method,
+              notes: notes || d.notes,
             }
           : d,
       ),

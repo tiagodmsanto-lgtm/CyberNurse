@@ -489,7 +489,8 @@ export function verifyDoseInDb(
   doseId: string,
   photoUri: string,
   score: number,
-  method: 'ai' | 'manual' | 'fallback'
+  method: 'ai' | 'manual' | 'fallback',
+  notes?: string
 ): void {
   const db = getDatabase();
   const now = Date.now();
@@ -503,9 +504,9 @@ export function verifyDoseInDb(
   
   db.runSync(
     `UPDATE doses 
-     SET status = 'taken', takenAt = ?, verificationPhoto = ?, verificationScore = ?, verificationMethod = ?
+     SET status = 'taken', takenAt = ?, verificationPhoto = ?, verificationScore = ?, verificationMethod = ?, notes = ?
      WHERE id = ?`,
-    [now, photoUri, score, method, doseId]
+    [now, photoUri, score, method, notes || null, doseId]
   );
   
   // Cancel the alarm if the user took it

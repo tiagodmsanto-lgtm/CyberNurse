@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import { createMedication, generateDosesForDay, searchMedications, searchAlimentos } from '../../src/services/medicationService';
 import { getDatabase, generateId } from '../../src/services/database';
 import { useMedicationStore } from '../../src/stores';
+import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { logMedicationAdded } from '../../src/services/analytics';
 import { Spacing, BorderRadius } from '../../src/theme/spacing';
 // ─── Inline Color Palette (Pokémon Center) ──────────────
@@ -123,7 +124,8 @@ export default function AddMedicationScreen() {
   const [currentStep, setCurrentStep] = useState(0);
 
   // Step 1: Name + Dosage + Form
-  const [category, setCategory] = useState<'Medicamento' | 'Suplemento' | 'Vitamina'>('Medicamento');
+  const isPremium = useSubscriptionStore((state) => state.isPremium);
+  const [category, setCategory] = useState<'Medicamento' | 'Suplemento' | 'Vitamina' | 'Métrica'>('Medicamento');
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
   const [selectedForm, setSelectedForm] = useState<MedicationFormType | null>(null);
@@ -384,8 +386,8 @@ export default function AddMedicationScreen() {
       {/* Category Selection */}
       <View style={[styles.inputGroup, { zIndex: 11 }]}>
         <Text style={styles.inputLabel}>{t('addMedication.step1.categoryLabel')}</Text>
-        <View style={styles.categoryGrid}>
-          {['Medicamento', 'Suplemento', 'Vitamina'].map((cat) => {
+        <View style={[styles.categoryGrid, { flexWrap: 'wrap', flexDirection: 'row' }]}>
+          {['Medicamento', 'Suplemento', 'Vitamina', 'Métrica'].map((cat) => {
             const isSelected = category === cat;
             return (
               <TouchableOpacity
@@ -393,8 +395,18 @@ export default function AddMedicationScreen() {
                 style={[
                   styles.categoryCard,
                   isSelected && styles.categoryCardSelected,
+                  { minWidth: '45%', marginBottom: 8 }
                 ]}
-                onPress={() => setCategory(cat as any)}
+                onPress={() => {
+                  if (cat === 'Métrica' && !isPremium) {
+                    router.push('/premium/paywall');
+                    return;
+                  }
+                  setCategory(cat as any);
+                  if (cat === 'Métrica') {
+                    setSelectedForm('medicao');
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Text
@@ -403,7 +415,7 @@ export default function AddMedicationScreen() {
                     isSelected && styles.categoryLabelSelected,
                   ]}
                 >
-                  {t(`addMedication.categories.${cat.toLowerCase()}`)}
+                  {cat === 'Métrica' ? 'Métrica de Saúde' : t(`addMedication.categories.${cat.toLowerCase()}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -412,127 +424,187 @@ export default function AddMedicationScreen() {
       </View>
 
       {/* Name Input */}
-      <View style={[styles.inputGroup, { zIndex: 10 }]}>
-        <Text style={styles.inputLabel}>
-          {category === 'Medicamento' 
-            ? t('addMedication.step1.nameLabel') 
-            : t('addMedication.step1.nameLabelSupplement')}
-        </Text>
-        <View style={styles.inputWrapper}>
-          <MaterialCommunityIcons
-            name="pill"
-            size={20}
-            color={name ? C.primary : C.textSecondary}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('addMedication.step1.namePlaceholder')}
-            placeholderTextColor={C.textSecondary}
-            value={name}
-            onChangeText={handleNameChange}
-            autoCapitalize="words"
-            returnKeyType="next"
-            onFocus={() => { if (name.length >= 3) setShowDropdown(true); }}
-            onBlur={() => {
-              setTimeout(() => setShowDropdown(false), 500);
-            }}
-          />
-        </View>
-        {showDropdown && searchResults.length > 0 && (
-          <View style={styles.autocompleteDropdown}>
-            {searchResults.map((item, index) => (
+      {category === 'Métrica' ? (
+        <View style={[styles.inputGroup, { zIndex: 10 }]}>
+          <Text style={styles.inputLabel}>Qual métrica você quer monitorar?</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8, paddingRight: 16 }}>
+            {['Pressão Arterial', 'Glicose', 'Frequência Cardíaca', 'Temperatura', 'Saturação de Oxigênio', 'Peso'].map((metric) => (
               <TouchableOpacity
-                key={index}
-                style={styles.autocompleteItem}
+                key={metric}
+                style={[
+                  styles.weekdayChip, 
+                  name === metric && styles.weekdayChipSelected, 
+                  { paddingHorizontal: 18, paddingVertical: 14, marginRight: 12, width: 'auto', borderRadius: 24 }
+                ]}
                 onPress={() => {
-                  setName(item.name);
-                  if (item.dosage && item.dosage !== 'N/A') {
-                    // Extract just the pure dosage (e.g. "500mg", "100 MG/ML", "50 MG + 12,5 MG")
-                    // Matches a number, optional space, unit, optional /unit, and optional + combinations
-                    const match = item.dosage.match(/(\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?(?:\s*\+\s*\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?)*)/i);
-                    const cleanDosage = match ? match[1] : item.dosage.split(/ \(| - | c\/ | com | SOL | COM | CAP | INJ | CX | FR /i)[0].trim();
-                    setDosage(cleanDosage);
-                  }
-                  setShowDropdown(false);
-                  Keyboard.dismiss();
+                  setName(metric);
+                  if (metric === 'Pressão Arterial') setDosage('mmHg');
+                  else if (metric === 'Glicose') setDosage('mg/dL');
+                  else if (metric === 'Frequência Cardíaca') setDosage('bpm');
+                  else if (metric === 'Temperatura') setDosage('°C');
+                  else if (metric === 'Saturação de Oxigênio') setDosage('%');
+                  else if (metric === 'Peso') setDosage('kg');
                 }}
               >
-                <Text style={styles.autocompleteTextName}>{item.name}</Text>
-                <Text style={styles.autocompleteTextDesc}>{item.dosage || item.category}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
-
-      {/* Dosage Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>
-          {category === 'Medicamento' 
-            ? t('addMedication.step1.dosageLabel') 
-            : t('addMedication.step1.dosageLabelSupplement')}
-        </Text>
-        <View style={styles.inputWrapper}>
-          <MaterialCommunityIcons
-            name="scale-balance"
-            size={20}
-            color={dosage ? C.primary : C.textSecondary}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('addMedication.step1.dosagePlaceholder')}
-            placeholderTextColor={C.textSecondary}
-            value={dosage}
-            onChangeText={setDosage}
-            returnKeyType="next"
-          />
-        </View>
-      </View>
-
-      {/* Form Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{t('addMedication.step1.formLabel')}</Text>
-        <View style={styles.formGrid}>
-          {getFormOptions(t).map((form) => {
-            const isSelected = selectedForm === form.key;
-            return (
-              <TouchableOpacity
-                key={form.key}
-                style={[
-                  styles.formCard,
-                  isSelected && styles.formCardSelected,
-                ]}
-                onPress={() => setSelectedForm(form.key)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.formIconCircle,
-                    isSelected && styles.formIconCircleSelected,
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={form.icon as any}
-                    size={28}
-                    color={isSelected ? C.white : C.textSecondary}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.formLabel,
-                    isSelected && styles.formLabelSelected,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {form.label}
+                <Text style={[styles.weekdayText, name === metric && styles.weekdayTextSelected, { fontSize: 16, fontWeight: '600' }]}>
+                  {metric}
                 </Text>
               </TouchableOpacity>
-            );
-          })}
+            ))}
+          </ScrollView>
         </View>
-      </View>
+      ) : (
+        <View style={[styles.inputGroup, { zIndex: 10 }]}>
+          <Text style={styles.inputLabel}>
+            {category === 'Medicamento' 
+              ? t('addMedication.step1.nameLabel') 
+              : t('addMedication.step1.nameLabelSupplement')}
+          </Text>
+          <View style={styles.inputWrapper}>
+            <MaterialCommunityIcons
+              name="pill"
+              size={20}
+              color={name ? C.primary : C.textSecondary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.textInput}
+              placeholder={t('addMedication.step1.namePlaceholder')}
+              placeholderTextColor={C.textSecondary}
+              value={name}
+              onChangeText={handleNameChange}
+              autoCapitalize="words"
+              returnKeyType="next"
+              onFocus={() => { if (name.length >= 3) setShowDropdown(true); }}
+              onBlur={() => {
+                setTimeout(() => setShowDropdown(false), 500);
+              }}
+            />
+          </View>
+          {showDropdown && searchResults.length > 0 && (
+            <View style={styles.autocompleteDropdown}>
+              {searchResults.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.autocompleteItem}
+                  onPress={() => {
+                    setName(item.name);
+                    if (item.dosage && item.dosage !== 'N/A') {
+                      const match = item.dosage.match(/(\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?(?:\s*\+\s*\d+(?:[.,]\d+)?\s*(?:MG|G|ML|MCG|UI|U|L|MUI|MEQ|%)(?:\/[A-Z]+)?)*)/i);
+                      const cleanDosage = match ? match[1] : item.dosage.split(/ \(| - | c\/ | com | SOL | COM | CAP | INJ | CX | FR /i)[0].trim();
+                      setDosage(cleanDosage);
+                    }
+                    setShowDropdown(false);
+                    Keyboard.dismiss();
+                  }}
+                >
+                  <Text style={styles.autocompleteTextName}>{item.name}</Text>
+                  <Text style={styles.autocompleteTextDesc}>{item.dosage || item.category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Dosage Input */}
+      {category === 'Métrica' ? (
+        (name === 'Peso' || name === 'Temperatura') ? (
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Unidade de Medida de {name}</Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {(name === 'Peso' ? ['kg', 'lbs'] : ['°C', '°F']).map((unit) => (
+                <TouchableOpacity
+                  key={unit}
+                  style={[
+                    styles.weekdayChip,
+                    dosage === unit && styles.weekdayChipSelected,
+                    { flex: 1, paddingVertical: 14, borderRadius: 16 }
+                  ]}
+                  onPress={() => setDosage(unit)}
+                >
+                  <Text style={[
+                    styles.weekdayText, 
+                    dosage === unit && styles.weekdayTextSelected, 
+                    { fontSize: 16, fontWeight: '600', textAlign: 'center' }
+                  ]}>
+                    {unit}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null
+      ) : (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>
+            {category === 'Medicamento' 
+              ? t('addMedication.step1.dosageLabel') 
+              : t('addMedication.step1.dosageLabelSupplement')}
+          </Text>
+          <View style={styles.inputWrapper}>
+            <MaterialCommunityIcons
+              name="scale-balance"
+              size={20}
+              color={dosage ? C.primary : C.textSecondary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.textInput}
+              placeholder={t('addMedication.step1.dosagePlaceholder')}
+              placeholderTextColor={C.textSecondary}
+              value={dosage}
+              onChangeText={setDosage}
+              returnKeyType="next"
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Form Selection */}
+      {category !== 'Métrica' && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>{t('addMedication.step1.formLabel')}</Text>
+          <View style={styles.formGrid}>
+            {getFormOptions(t).map((form) => {
+              const isSelected = selectedForm === form.key;
+              return (
+                <TouchableOpacity
+                  key={form.key}
+                  style={[
+                    styles.formCard,
+                    isSelected && styles.formCardSelected,
+                  ]}
+                  onPress={() => setSelectedForm(form.key)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.formIconCircle,
+                      isSelected && styles.formIconCircleSelected,
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={form.icon as any}
+                      size={28}
+                      color={isSelected ? C.white : C.textSecondary}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.formLabel,
+                      isSelected && styles.formLabelSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {form.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* Color Selection */}
       <View style={styles.inputGroup}>

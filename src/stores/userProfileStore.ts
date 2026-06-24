@@ -3,13 +3,24 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface UserProfileData {
+  // 1. Identificação
   name: string;
-  age: string;
+  email: string;
+  age: string; // ou Data de Nascimento
+  biologicalGender: string;
+
+  // 2. Antropometria
   weight: string;
   height: string;
+  activityLevel: string;
+  healthGoals: string;
+
+  // 3. Clínico
   bloodType: string;
-  allergies: string;
   chronicConditions: string;
+  medicationAllergies: string;
+  foodIntolerances: string;
+  allergies: string; // Legacy / Other allergies
 }
 
 interface UserProfileState {
@@ -20,12 +31,18 @@ interface UserProfileState {
 
 const defaultData: UserProfileData = {
   name: '',
+  email: '',
   age: '',
+  biologicalGender: '',
   weight: '',
   height: '',
+  activityLevel: '',
+  healthGoals: '',
   bloodType: '',
-  allergies: '',
   chronicConditions: '',
+  medicationAllergies: '',
+  foodIntolerances: '',
+  allergies: '',
 };
 
 export const useUserProfileStore = create<UserProfileState>()(

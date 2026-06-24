@@ -1,8 +1,10 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { Tabs, Redirect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import auth from '@react-native-firebase/auth';
+import { useUserProfileStore } from '../../src/stores/userProfileStore';
 
 const Colors = {
   primary: '#E53935',
@@ -15,6 +17,30 @@ const Colors = {
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const profileData = useUserProfileStore((state) => state.data);
+  const [user, setUser] = useState(auth().currentUser);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  useEffect(() => {
+    const subscriber = auth().onAuthStateChanged((u) => {
+      setUser(u);
+      setIsAuthChecking(false);
+    });
+    return subscriber;
+  }, []);
+
+  if (isAuthChecking) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  // Verifica se o usuário tem conta E já preencheu os dados essenciais
+  if (!user || !profileData.name || !profileData.age) {
+    return <Redirect href="/auth/login" />;
+  }
 
   return (
     <Tabs
